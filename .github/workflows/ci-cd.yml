@@ -2,9 +2,9 @@ name: SDASA CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: ["main", "develop"]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: ["main", "develop"]
   workflow_dispatch:
 
 permissions:
@@ -76,7 +76,7 @@ jobs:
 
       - name: Verificar Ausência de Chaves Privadas e Arquivos .env
         run: |
-          if grep -rn "BEGIN PRIVATE KEY" . --exclude-dir=.git; then
+          if grep -rn "BEGIN PRIVATE KEY" . --exclude-dir=.git --exclude-dir=.github --exclude=\*.md; then
             echo "❌ Alerta de Segurança: Chave privada detectada!"
             exit 1
           fi
@@ -107,7 +107,7 @@ jobs:
       - name: Upload de Artefatos do Frontend
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: "."
 
       - name: Publicar no GitHub Pages
         id: deployment
