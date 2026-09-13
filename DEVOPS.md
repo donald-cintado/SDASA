@@ -76,21 +76,39 @@ Adotamos uma abordagem híbrida moderna inspirada no **GitHub Flow** com element
 [feature/*]  └───────●───────────┘
 ```
 
-### 2.1 Classificação das Branches
+### 2.1 Classificação das Branches: Permanentes vs. Transitórias (Sob Demanda)
 
-| Tipo de Branch | Nome / Padrão | Origem | Destino (Merge) | Propósito |
+Em alinhamento rigoroso com as melhores práticas de Engenharia de Software e governança Git, as branches são divididas em duas categorias operacionais:
+
+#### A) Branches Permanentes (Long-Lived — Existem Fixamente no GitHub)
+- **`main`**: Código de produção homologado e auditado. Protegida contra push direto. A cada merge aprovado nesta branch, o pipeline de CD implanta automaticamente a aplicação no GitHub Pages com tag SemVer.
+- **`develop`**: Branch oficial de integração contínua da equipe. Centraliza o trabalho integrado de todos os desenvolvedores antes do corte de release para produção.
+
+#### B) Branches Transitórias / Efêmeras (Short-Lived — Criadas Sob Demanda e Excluídas Após Merge)
+> [!IMPORTANT]
+> As branches com prefixos `feature/*`, `bugfix/*`, `hotfix/*` e `release/*` **não são branches estáticas permanentes**. Elas possuem ciclo de vida curto: são criadas a partir de `develop` (ou `main` no caso de hotfix), recebem commits com Conventional Commits e, assim que o Pull Request é aprovado e o merge é concluído, **são deletadas automaticamente** para evitar o acúmulo de branches órfãs e desatualizadas (*Branch Rot*).
+
+| Categoria | Nome / Padrão | Origem | Destino (Merge) | Ciclo de Vida & Propósito |
 |:---|:---|:---|:---|:---|
-| **Principal (Produção)** | `main` | - | - | Código estável, homologado e implantado em produção (GitHub Pages). |
-| **Desenvolvimento** | `develop` | `main` | `main` | Ponto de integração de todas as features prontas para o próximo ciclo de release. |
-| **Funcionalidades** | `feature/<card-id>-<slug>` | `develop` | `develop` | Desenvolvimento isolado de novas User Stories (Ex: `feature/US-02-anexo-solicitacao`). |
-| **Correção de Bugs** | `bugfix/<card-id>-<slug>` | `develop` | `develop` | Resolução de defeitos identificados em fase de homologação. |
-| **Correção Crítica** | `hotfix/<slug>` | `main` | `main` e `develop` | Correção emergencial de falhas em produção (Ex: `hotfix/protocol-collision`). |
-| **Corte de Versão** | `release/vX.Y.Z` | `develop` | `main` e `develop` | Preparação final de versão (ajuste de metadados, changelog e tags). |
+| **Permanente** | `main` | - | - | Produção estável e deploy contínuo (GitHub Pages). |
+| **Permanente** | `develop` | `main` | `main` | Integração contínua e homologação de features. |
+| **Transitória** | `feature/<card-id>-<slug>` | `develop` | `develop` | Criada para um card do backlog e deletada após merge. |
+| **Transitória** | `bugfix/<card-id>-<slug>` | `develop` | `develop` | Criada para correção em homologação e deletada após merge. |
+| **Transitória** | `hotfix/<slug>` | `main` | `main` e `develop` | Criada emergencialmente para produção e deletada após merge. |
+| **Transitória** | `release/vX.Y.Z` | `develop` | `main` e `develop` | Criada temporariamente para corte de versão formal. |
 
-### 2.2 Políticas de Proteção de Branches (Branch Protection Rules)
+### 2.2 Estado Atual das Branches no Repositório Remoto (GitHub)
+
+Para que a avaliação da docente (**Prof.ª Erika Miranda**) possa verificar a esteira em tempo real no GitHub, o repositório remoto conta com as seguintes branches ativas:
+
+1. **`main`**: Branch principal com o código base auditado, histórico linear e tag `v1.0.0`.
+2. **`develop`**: Branch de homologação ativa sincronizada com o time de desenvolvimento.
+3. **`feature/US-02-catalogo-solicitacoes`**: Branch de funcionalidade ativa demonstrando na prática o isolamento de trabalho referente à User Story US-02 (Catálogo com indicação de SLA) antes da submissão de Pull Request.
+
+### 2.3 Políticas de Proteção de Branches (Branch Protection Rules)
 
 Para salvaguardar a integridade das branches `main` e `develop`:
-1. **Proibição de Push Direto (`Direct Push Blocked`):** Nenhum integrante da equipe (incluindo administradores) pode fazer `git push` direto nas branches protegidas.
+1. **Proibição de Push Direto (`Direct Push Blocked`):** Nenhum integrante da equipe pode fazer `git push` direto nas branches protegidas.
 2. **Revisão Obrigatória por Pares (Pull Request):** Todo merge exige no mínimo 1 aprovação formal de outro desenvolvedor ou arquiteto (Stephanny ou Júlio).
 3. **Status Checks Obrigatórios:** O pipeline de CI (`lint-and-validate`, `unit-tests`, `security-scan`) deve passar com 100% de sucesso antes da liberação do botão de merge.
 4. **Histórico Linear (`Squash and Merge` ou `Rebase`):** As branches de funcionalidade são consolidadas para manter um histórico limpo e auditável na branch principal.
