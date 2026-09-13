@@ -439,22 +439,16 @@ Uma vez em produção, o produto é acompanhado continuamente para antecipar fal
 Conforme solicitado nas instruções da atividade, o repositório Git deve ser disponibilizado com acesso para a docente orientadora:
 
 - **E-mail de Acesso:** `eefmiranda@gmail.com`
-- **Link do Repositório:** A ser compartilhado no envio da atividade acadêmica no formato:  
-  `https://github.com/<seu-usuario-github>/SDASA`
+- **Link Oficial do Repositório:** [`https://github.com/donald-cintado/SDASA`](https://github.com/donald-cintado/SDASA)
 
-### Passo a Passo para Subir o Repositório no GitHub e Adicionar a Professora:
+### Passo a Passo para Convidar a Docente no GitHub:
 
-1. **Subir o Repositório Local para o GitHub:**
-   ```bash
-   # Criar o repositório no GitHub (via interface web ou GitHub CLI: gh repo create SDASA --public)
-   # Em seguida, vincular e enviar os branches locais:
-   git remote add origin https://github.com/<seu-usuario-github>/SDASA.git
-   git push -u origin main
-   git push -u origin develop
-   ```
+1. **Repositório Sincronizado:**
+   O repositório já se encontra configurado e versionado remotamente:
+   `https://github.com/donald-cintado/SDASA.git`
 
-2. **Convidar a Docente no Repositório (se for privado ou para dar permissão de colaboradora):**
-   - Acesse o repositório no GitHub: `https://github.com/<seu-usuario-github>/SDASA`.
+2. **Convidar a Docente no Repositório (Permissão de Colaboradora):**
+   - Acesse o repositório no GitHub: [https://github.com/donald-cintado/SDASA](https://github.com/donald-cintado/SDASA).
    - Clique na aba **Settings** (Configurações).
    - No menu lateral esquerdo, clique em **Collaborators** (Colaboradores).
    - Clique no botão verde **Add people** (Adicionar pessoas).
