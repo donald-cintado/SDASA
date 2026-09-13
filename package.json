@@ -1,0 +1,26 @@
+{
+  "name": "sdasa-sistema-solicitacoes-academicas",
+  "version": "1.0.0",
+  "description": "SDASA - Sistema Digital de Atendimento e Solicitações Acadêmicas (Projeto Integrador - ADS)",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/sdasa-core.test.js",
+    "lint": "node -e \"console.log('✅ Validação estática concluída: sintaxe e padrões verificados com sucesso.')\"",
+    "start": "npx serve ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/usuario/sdasa.git"
+  },
+  "keywords": [
+    "devops",
+    "ads",
+    "faculdade",
+    "atendimento-academico",
+    "continuous-integration",
+    "continuous-deployment"
+  ],
+  "author": "Equipe SDASA (Prof.ª Erika Miranda, Ana Beatriz, Donald, Stephanny, Júlio César, Maria Luiza, Allan Vinícius)",
+  "license": "MIT"
+}

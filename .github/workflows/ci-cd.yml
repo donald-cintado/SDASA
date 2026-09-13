@@ -1,0 +1,114 @@
+name: SDASA CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # ============================================================
+  # ETAPA 1: Validação Estática e Linter
+  # ============================================================
+  lint-and-validate:
+    name: 🔍 Análise Estática & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validar Sintaxe dos Arquivos JavaScript
+        run: |
+          node -c js/mock-data.js
+          node -c js/app.js
+          echo "✅ Todos os arquivos JavaScript possuem sintaxe válida."
+
+      - name: Validar Integridade do HTML e CSS
+        run: |
+          test -f index.html || exit 1
+          test -f css/style.css || exit 1
+          echo "✅ Arquivos essenciais verificados com sucesso."
+
+  # ============================================================
+  # ETAPA 2: Testes Automatizados Unitários (QA - Allan Vinícius)
+  # ============================================================
+  unit-tests:
+    name: 🧪 Testes Unitários de Regras de Negócio
+    needs: lint-and-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Executar Bateria de Testes do SDASA Core
+        run: npm test
+
+  # ============================================================
+  # ETAPA 3: Auditoria de Segurança (SecOps - Maria Luiza)
+  # ============================================================
+  security-scan:
+    name: 🛡️ Verificação de Segurança e Segredos
+    needs: lint-and-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Verificar Ausência de Chaves Privadas e Arquivos .env
+        run: |
+          if grep -rn "BEGIN PRIVATE KEY" . --exclude-dir=.git; then
+            echo "❌ Alerta de Segurança: Chave privada detectada!"
+            exit 1
+          fi
+          if [ -f .env ]; then
+            echo "❌ Alerta de Segurança: Arquivo .env não deve estar versionado!"
+            exit 1
+          fi
+          echo "✅ Nenhuma credencial crítica ou arquivo sensível detectado no repositório."
+
+  # ============================================================
+  # ETAPA 4: Entrega Contínua (Deploy Automatizado - GitHub Pages)
+  # ============================================================
+  deploy:
+    name: 🚀 Deploy Contínuo (Produção - GitHub Pages)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [unit-tests, security-scan]
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload de Artefatos do Frontend
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
