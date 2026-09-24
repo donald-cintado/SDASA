@@ -184,12 +184,16 @@ class SDASAApp {
   }
 
   // ==========================================
-  // Autenticação e Perfis
+  // Autenticação, Perfis e Cadastro (US01, US02, UC01, RF01)
   // ==========================================
   login(userType = 'student') {
     try {
+      let roleToFind = userType;
+      if (userType === 'secretaria') roleToFind = 'secretary';
+      if (userType === 'gestor') roleToFind = 'manager';
+
       const user = (typeof INITIAL_USERS !== 'undefined') 
-        ? (INITIAL_USERS.find(u => u.role === userType) || INITIAL_USERS[0])
+        ? (INITIAL_USERS.find(u => u.role === roleToFind || u.id === userType) || INITIAL_USERS[0])
         : this.currentUser;
 
       this.currentUser = user;
@@ -213,9 +217,66 @@ class SDASAApp {
     this.showToast('Sessão encerrada com sucesso.');
   }
 
+  openRegisterModal() {
+    const modal = document.getElementById('register-modal');
+    if (modal) modal.classList.remove('hidden');
+    this.refreshIcons();
+  }
+
+  closeRegisterModal() {
+    const modal = document.getElementById('register-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  handleRegisterSubmit() {
+    const name = document.getElementById('reg-name')?.value.trim();
+    const email = document.getElementById('reg-email')?.value.trim();
+    const cpf = document.getElementById('reg-cpf')?.value.trim();
+    const ra = document.getElementById('reg-ra')?.value.trim();
+    const course = document.getElementById('reg-course')?.value;
+    const password = document.getElementById('reg-password')?.value;
+    const confirm = document.getElementById('reg-password-confirm')?.value;
+
+    if (!name || !email || !cpf || !ra || !password) {
+      this.showToast('Por favor, preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    if (password !== confirm) {
+      this.showToast('As senhas digitadas não conferem.');
+      return;
+    }
+
+    const newUser = {
+      id: `user_${Date.now()}`,
+      name: name,
+      role: "student",
+      roleLabel: "Aluno(a)",
+      email: email,
+      cpf: cpf,
+      ra: ra,
+      course: course || "Análise e Desenvolvimento de Sistemas",
+      semester: "1º Semestre",
+      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
+    };
+
+    if (typeof INITIAL_USERS !== 'undefined') {
+      INITIAL_USERS.push(newUser);
+    }
+
+    this.currentUser = newUser;
+    this.closeRegisterModal();
+    this.markTestStep('step2');
+    this.updateUserUI();
+    this.showScreen('dashboard');
+    this.showToast(`Cadastro realizado com sucesso! Bem-vindo(a), ${name}.`);
+  }
+
   updateUserUI() {
     if (!this.currentUser) return;
     const isSecretary = this.currentUser.role === 'secretary';
+    const isGestor = this.currentUser.role === 'manager';
+    const isProfessor = this.currentUser.role === 'professor';
 
     // Atualiza dados no header e sidebar
     document.querySelectorAll('.user-name-display').forEach(el => el.textContent = this.currentUser.name);
@@ -226,39 +287,45 @@ class SDASAApp {
       if (this.currentUser.avatar) el.src = this.currentUser.avatar;
     });
 
-    // Ajusta visualização para Secretaria
+    // Banners no dashboard
     const secretaryBanner = document.getElementById('secretary-banner');
-    if (secretaryBanner) {
-      secretaryBanner.classList.toggle('hidden', !isSecretary);
-    }
+    if (secretaryBanner) secretaryBanner.classList.toggle('hidden', !isSecretary);
 
-    // Alternador de abas no dashboard
+    const gestorBanner = document.getElementById('gestor-banner');
+    if (gestorBanner) gestorBanner.classList.toggle('hidden', !isGestor);
+
+    const professorBanner = document.getElementById('professor-banner');
+    if (professorBanner) professorBanner.classList.toggle('hidden', !isProfessor);
+
+    // Cards e visões do dashboard
     const studentStats = document.getElementById('student-stats-cards');
     const secretaryStats = document.getElementById('secretary-stats-cards');
-    if (studentStats && secretaryStats) {
-      if (isSecretary) {
-        studentStats.classList.add('hidden');
-        secretaryStats.classList.remove('hidden');
-      } else {
-        studentStats.classList.remove('hidden');
-        secretaryStats.classList.add('hidden');
-      }
-    }
+    const gestorStats = document.getElementById('gestor-stats-cards');
+    const gestorAnalytics = document.getElementById('gestor-analytics-panel');
+
+    if (studentStats) studentStats.classList.toggle('hidden', isSecretary || isGestor);
+    if (secretaryStats) secretaryStats.classList.toggle('hidden', !isSecretary);
+    if (gestorStats) gestorStats.classList.toggle('hidden', !isGestor);
+    if (gestorAnalytics) gestorAnalytics.classList.toggle('hidden', !isGestor);
   }
 
   // ==========================================
-  // Dashboard & Métricas
+  // Dashboard, Métricas e Indicadores (US10, RF09, RN10, UC06)
   // ==========================================
   renderDashboard() {
     this.updateUserUI();
     this.renderMetrics();
+    if (this.currentUser && this.currentUser.role === 'manager') {
+      this.renderGestorDashboard();
+    }
     this.renderRequestsTable();
     this.renderNotificationsBadge();
   }
 
   renderMetrics() {
     if (!this.currentUser) return;
-    const userRequests = this.currentUser.role === 'secretary' 
+    const isSpecialUser = this.currentUser.role === 'secretary' || this.currentUser.role === 'manager' || this.currentUser.role === 'professor';
+    const userRequests = isSpecialUser 
       ? this.requests 
       : this.requests.filter(r => r.userId === this.currentUser.id);
 
@@ -289,12 +356,93 @@ class SDASAApp {
     if (secConcluded) secConcluded.textContent = this.requests.filter(r => r.status === 'concluded').length;
   }
 
+  renderGestorDashboard() {
+    const total = this.requests.length;
+    const concluded = this.requests.filter(r => r.status === 'concluded').length;
+    const pending = this.requests.filter(r => r.status === 'pending').length;
+    const inProgress = this.requests.filter(r => r.status === 'in_progress').length;
+    const rejected = this.requests.filter(r => r.status === 'rejected').length;
+
+    // Cumprimento de SLA: pedidos concluídos ou em tramitação dentro do prazo
+    const slaRate = total > 0 ? Math.round(((concluded + inProgress) / total) * 100) : 100;
+    const avgDays = "2.1 dias úteis";
+    const critical = pending;
+
+    const gesTotal = document.getElementById('ges-count-total');
+    const gesSla = document.getElementById('ges-sla-rate');
+    const gesAvg = document.getElementById('ges-avg-time');
+    const gesCrit = document.getElementById('ges-critical-count');
+
+    if (gesTotal) gesTotal.textContent = total;
+    if (gesSla) gesSla.textContent = `${slaRate}%`;
+    if (gesAvg) gesAvg.textContent = avgDays;
+    if (gesCrit) gesCrit.textContent = critical;
+
+    // Distribuição por Status
+    const statusContainer = document.getElementById('ges-status-distribution');
+    if (statusContainer) {
+      const items = [
+        { label: "Concluído / Deferido", count: concluded, color: "bg-emerald-500", text: "text-emerald-700" },
+        { label: "Em Análise / Tramitação", count: inProgress, color: "bg-sky-500", text: "text-sky-700" },
+        { label: "Aguardando Triagem (Pendente)", count: pending, color: "bg-amber-500", text: "text-amber-700" },
+        { label: "Indeferido / Recusado", count: rejected, color: "bg-rose-500", text: "text-rose-700" }
+      ];
+
+      statusContainer.innerHTML = items.map(item => {
+        const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
+        return `
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-semibold text-slate-700">${item.label}</span>
+              <span class="font-bold ${item.text}">${item.count} (${pct}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div class="${item.color} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Distribuição por Tipo de Serviço Acadêmico
+    const serviceContainer = document.getElementById('ges-service-distribution');
+    if (serviceContainer) {
+      const countsByService = {};
+      this.requests.forEach(r => {
+        countsByService[r.serviceTitle] = (countsByService[r.serviceTitle] || 0) + 1;
+      });
+
+      const serviceEntries = Object.entries(countsByService);
+      serviceContainer.innerHTML = serviceEntries.map(([title, count]) => {
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        return `
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-semibold text-slate-700 truncate max-w-[220px]">${title}</span>
+              <span class="font-bold text-indigo-700">${count} (${pct}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
   renderRequestsTable() {
     const tableBody = document.getElementById('requests-table-body');
     const emptyState = document.getElementById('requests-empty-state');
     if (!tableBody) return;
 
-    let filtered = (!this.currentUser || this.currentUser.role === 'secretary')
+    const isSpecialRole = this.currentUser && (
+      this.currentUser.role === 'secretary' || 
+      this.currentUser.role === 'manager' || 
+      this.currentUser.role === 'professor' ||
+      this.currentUser.role === 'admin'
+    );
+
+    let filtered = (!this.currentUser || isSpecialRole)
       ? [...this.requests]
       : this.requests.filter(r => r.userId === this.currentUser.id);
 
@@ -326,7 +474,16 @@ class SDASAApp {
       const statusMeta = this.getStatusMeta(req.status);
       const createdDateFormatted = this.formatDate(req.createdAt);
       const estimatedDateFormatted = this.formatDate(req.estimatedDate);
-      const isSec = this.currentUser && this.currentUser.role === 'secretary';
+      const isSec = this.currentUser && (this.currentUser.role === 'secretary' || this.currentUser.role === 'admin');
+      const msgCount = (req.messages && req.messages.length) ? req.messages.length : 0;
+
+      // Alertas de Prazos e Pendências (US08 / RF07 / RN07)
+      let slaBadge = '';
+      if (req.status === 'pending') {
+        slaBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-1"><i data-lucide="alert-circle" class="w-2.5 h-2.5"></i> Aguardando Triagem</span>`;
+      } else if (req.status === 'in_progress') {
+        slaBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200 mt-1"><i data-lucide="clock" class="w-2.5 h-2.5"></i> Em Tramitação</span>`;
+      }
 
       return `
         <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
@@ -334,12 +491,20 @@ class SDASAApp {
             <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded border border-blue-100">${req.id}</span>
           </td>
           <td class="py-4 px-4">
-            <div class="font-medium text-slate-800">${req.serviceTitle}</div>
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-slate-800">${req.serviceTitle}</span>
+              ${msgCount > 0 ? `
+                <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-blue-700 bg-blue-100/70 px-1.5 py-0.5 rounded-full" title="${msgCount} mensagem(ns) vinculada(s)">
+                  <i data-lucide="message-square" class="w-2.5 h-2.5"></i> ${msgCount}
+                </span>
+              ` : ''}
+            </div>
             <div class="text-xs text-slate-500">${req.category} • ${req.userName}</div>
           </td>
           <td class="py-4 px-4 text-xs text-slate-600">
             <div>${createdDateFormatted}</div>
             <div class="text-slate-400 text-[11px]">Prev.: ${estimatedDateFormatted}</div>
+            ${slaBadge}
           </td>
           <td class="py-4 px-4">
             <span class="status-badge status-badge-${req.status}">
@@ -709,6 +874,10 @@ class SDASAApp {
       `).join('');
     }
 
+    // Comunicação Vinculada ao Protocolo (US09 / RF08 / RN09 / UC05)
+    this.currentViewingRequestId = requestId;
+    this.renderRequestMessages(req);
+
     // Exibe o modal
     const modal = document.getElementById('request-details-modal');
     if (modal) modal.classList.remove('hidden');
@@ -716,7 +885,91 @@ class SDASAApp {
     this.refreshIcons();
   }
 
+  renderRequestMessages(req) {
+    const messagesCount = document.getElementById('modal-req-messages-count');
+    const container = document.getElementById('modal-req-messages-container');
+    if (!container) return;
+
+    const messages = req.messages || [];
+    if (messagesCount) {
+      messagesCount.textContent = `${messages.length} ${messages.length === 1 ? 'mensagem' : 'mensagens'}`;
+    }
+
+    if (messages.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4 text-slate-400 italic">
+          Nenhuma mensagem registrada nesta solicitação. Utilize o campo abaixo para iniciar o diálogo institucional.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = messages.map(msg => {
+      const isSec = msg.senderRole === 'secretary';
+
+      return `
+        <div class="p-3 rounded-2xl ${isSec ? 'bg-amber-50/80 border border-amber-200' : 'bg-blue-50/80 border border-blue-200'}">
+          <div class="flex items-center justify-between mb-1">
+            <span class="font-bold text-xs ${isSec ? 'text-amber-900' : 'text-blue-900'} flex items-center gap-1">
+              <i data-lucide="${isSec ? 'building-2' : 'user'}" class="w-3.5 h-3.5"></i>
+              ${msg.senderName}
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono">${msg.time}</span>
+          </div>
+          <p class="text-xs text-slate-700 leading-relaxed">${msg.text}</p>
+        </div>
+      `;
+    }).join('');
+  }
+
+  sendCurrentRequestMessage() {
+    if (!this.currentViewingRequestId) return;
+    const input = document.getElementById('modal-req-message-input');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    const req = this.requests.find(r => r.id === this.currentViewingRequestId);
+    if (!req) return;
+
+    if (!req.messages) req.messages = [];
+
+    const now = new Date();
+    const formattedTime = `Hoje às ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    const newMsg = {
+      id: `msg_${Date.now()}`,
+      senderName: `${this.currentUser ? this.currentUser.name : 'Usuário'} (${this.currentUser ? this.currentUser.roleLabel : 'Participante'})`,
+      senderRole: this.currentUser ? this.currentUser.role : 'student',
+      time: formattedTime,
+      text: text
+    };
+
+    req.messages.push(newMsg);
+    this.saveRequests();
+    input.value = '';
+    this.renderRequestMessages(req);
+    this.renderRequestsTable();
+
+    // Notificação automática sobre a nova mensagem
+    this.notifications.unshift({
+      id: `notif_${Date.now()}`,
+      title: "Nova Mensagem no Protocolo",
+      message: `Mensagem registrada no chamado ${req.id} (${req.serviceTitle}).`,
+      time: "Agora",
+      read: false,
+      requestId: req.id,
+      type: "info"
+    });
+    this.saveNotifications();
+    this.renderNotificationsBadge();
+
+    this.showToast('Mensagem enviada com sucesso no canal do protocolo.');
+    this.refreshIcons();
+  }
+
   closeRequestDetails() {
+    this.currentViewingRequestId = null;
     const modal = document.getElementById('request-details-modal');
     if (modal) modal.classList.add('hidden');
   }

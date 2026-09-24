@@ -8,17 +8,17 @@
 
 ---
 
-### 👥 Papéis e Responsabilidades da Equipe no Modelo DevOps
+### 👥 Papéis e Responsabilidades da Equipe no Modelo DevOps (Conforme Seção 6.15)
 
-| Integrante | Papel no Projeto | Atuação na Cultura DevOps |
+| Integrante | Papel no Módulo 1 | Atuação na Cultura DevOps |
 |:---|:---|:---|
-| **Prof.ª Erika Miranda** | *Product Owner & Docente Orientadora* | Validação de valor do negócio, aprovação de critérios de aceitação e aceite formal de entregas. |
-| **Ana Beatriz Cruz da Silva** | *Scrum Master* | Facilitação ágil, remoção de impedimentos na esteira de entrega, gestão do fluxo no Kanban/Scrum. |
-| **Donald Cintado Cabezas** | *Analista de Negócios* | Refinamento de User Stories, mapeamento de dores dos alunos/secretaria e regras de SLA. |
-| **Stephanny Crepalde Costa** | *Arquiteta de Software* | Desenho arquitetural evolutivo, padrões de API, modularização de componentes e escalabilidade. |
-| **Júlio César Benício Inácio** | *Dev & DevOps Engineer* | Construção e manutenção dos pipelines de CI/CD, governança de branches, scripts de automação e deploy. |
-| **Maria Luiza Dias Silva Tavares** | *Security Officer (DevSecOps)* | Verificação contínua de vulnerabilidades (SAST/DAST), gestão de segredos e conformidade com a LGPD. |
-| **Allan Vinícius Cabeggi Alvarenga** | *Analista de Qualidade (QA) e Sustentabilidade* | Planejamento e automação de testes (unitários, integração e usabilidade), métricas de eficiência de software. |
+| **Prof.ª Erika Miranda** | *Product Owner* | Priorização das necessidades e do backlog. |
+| **Donald Cintado Cabezas** | *Scrum Master* | Organização do trabalho e facilitação da comunicação. |
+| **Ana Beatriz Cruz da Silva** | *Analista de Negócios* | Alinhamento da solução aos objetivos e indicadores. |
+| **Maria Luiza Dias Silva Tavares** | *Arquiteto de Software* | Decisões arquiteturais e técnicas. |
+| **Allan Vinícius Cabeggi Alvarenga** | *Dev/DevOps* | Desenvolvimento, versionamento, automação, Git e testes. |
+| **Stephanny Crepalde Costa** | *Security Officer* | Segurança, riscos e proteção das informações. |
+| **Júlio César Benício Inácio** | *Analista de Qualidade e Sustentabilidade* | Qualidade, testes e práticas de sustentabilidade. |
 
 ---
 
@@ -109,7 +109,7 @@ Para que a avaliação da docente (**Prof.ª Erika Miranda**) possa verificar a 
 
 Para salvaguardar a integridade das branches `main` e `develop`:
 1. **Proibição de Push Direto (`Direct Push Blocked`):** Nenhum integrante da equipe pode fazer `git push` direto nas branches protegidas.
-2. **Revisão Obrigatória por Pares (Pull Request):** Todo merge exige no mínimo 1 aprovação formal de outro desenvolvedor ou arquiteto (Stephanny ou Júlio).
+2. **Revisão Obrigatória por Pares (Pull Request):** Todo merge exige no mínimo 1 aprovação formal de outro desenvolvedor ou arquiteto (Maria Luiza ou Allan).
 3. **Status Checks Obrigatórios:** O pipeline de CI (`lint-and-validate`, `unit-tests`, `security-scan`) deve passar com 100% de sucesso antes da liberação do botão de merge.
 4. **Histórico Linear (`Squash and Merge` ou `Rebase`):** As branches de funcionalidade são consolidadas para manter um histórico limpo e auditável na branch principal.
 
@@ -145,161 +145,170 @@ A equipe adota estritamente o padrão **Conventional Commits** para assegurar qu
 
 ---
 
-## 4. 📋 Backlog Inicial Estruturado
+## 4. 📋 Backlog Inicial Estruturado (Conforme Seção 6.6)
 
-Com base nas dores mapeadas no projeto SDASA, dividimos o backlog em **4 Épicos Fundamentais** e selecionamos **8 User Stories** de alta relevância para a primeira entrega:
+O backlog reúne as necessidades que deverão ser desenvolvidas e priorizadas pela equipe. Para o SDASA, o backlog inicial está organizado em histórias de usuário, permitindo transformar as necessidades identificadas nas etapas anteriores em funcionalidades implementáveis:
 
-### 4.1 Épicos do Produto
-- **ÉPICO 01: Identidade, Acesso e Perfis** — Gestão de login, autenticação segura e diferenciação de visões (Aluno, Secretaria e Docente).
-- **ÉPICO 02: Catálogo de Serviços e Abertura de Solicitações** — Catálogo parametrizado, formulários intuitivos, upload de anexos e cálculo de SLA.
-- **ÉPICO 03: Gestão de Atendimento, Triagem e Despacho** — Painel da secretaria, alteração de status, histórico e linha do tempo.
-- **ÉPICO 04: Transparência, Notificações e Segurança** — Notificações em tempo real, geração de comprovante oficial e conformidade LGPD.
+### 4.1 Tabela Oficial do Backlog do Produto (Seção 6.6)
 
-### 4.2 Tabela de User Stories Detalhadas
-
-| ID | Épico | Título da História de Usuário | Prioridade (MoSCoW) | Estimativa (SP) |
-|:---:|:---:|:---|:---:|:---:|
-| **US-01** | Épico 01 | Autenticação Unificada por E-mail Institucional ou CPF | **Must Have** | 3 SP |
-| **US-02** | Épico 02 | Seleção de Serviços Acadêmicos com Indicação Clara de SLA | **Must Have** | 5 SP |
-| **US-03** | Épico 02 | Abertura de Solicitação com Upload de Documentos Comprobatórios | **Must Have** | 5 SP |
-| **US-04** | Épico 02 | Geração Dinâmica de Protocolo Oficial e Comprovante de Envio | **Must Have** | 3 SP |
-| **US-05** | Épico 03 | Painel de Controle de Solicitações para Secretaria (Triagem e Despacho) | **Must Have** | 8 SP |
-| **US-06** | Épico 03 | Linha do Tempo Visual do Ciclo de Vida do Pedido | **Should Have** | 5 SP |
-| **US-07** | Épico 04 | Notificações no Sistema e Feedback de Alteração de Status | **Should Have** | 3 SP |
-| **US-08** | Épico 04 | Anonimização e Conformidade LGPD de Dados Sensíveis do Aluno | **Must Have** | 5 SP |
+| ID | História de usuário | Prioridade | Critério principal |
+|:---:|:---|:---:|:---|
+| **US01** | Como aluno, quero criar uma conta para acessar o sistema. | **Alta** | Cadastro realizado com dados válidos. |
+| **US02** | Como usuário, quero realizar login para acessar minhas solicitações. | **Alta** | Autenticação validada. |
+| **US03** | Como aluno, quero abrir uma solicitação acadêmica. | **Alta** | Solicitação registrada com protocolo. |
+| **US04** | Como aluno, quero acompanhar o status da solicitação. | **Alta** | Status exibido de forma clara. |
+| **US05** | Como aluno, quero consultar meu histórico. | **Média** | Solicitações anteriores disponíveis. |
+| **US06** | Como usuário, quero receber notificações sobre alterações. | **Média** | Atualizações comunicadas ao usuário. |
+| **US07** | Como secretaria, quero administrar as solicitações. | **Alta** | Demandas organizadas para atendimento. |
+| **US08** | Como secretaria, quero controlar prazos e pendências. | **Alta** | Prazos e pendências identificáveis. |
+| **US09** | Como instituição, quero manter comunicação com o usuário. | **Média** | Mensagens vinculadas à solicitação. |
+| **US10** | Como gestor, quero visualizar indicadores de atendimento. | **Baixa** | Relatórios básicos disponíveis. |
 
 ---
 
-### 4.3 Detalhamento das Histórias (Formato Ágil + Critérios Gherkin)
+### 4.2 Detalhamento Ágil das Histórias de Usuário (Critérios Gherkin & BDD)
 
-#### 🔹 US-01: Autenticação Unificada por E-mail Institucional ou CPF
-- **Como:** Estudante (Mariana) ou funcionário acadêmico (Carlos/Erika)
-- **Quero:** Acessar a plataforma informando meu e-mail institucional ou CPF com senha segura
-- **Para que:** Eu possa acessar meus serviços acadêmicos de forma rápida e protegida.
+#### 🔹 US01: Cadastro de Conta de Usuário
+- **Como:** Aluno universitário
+- **Quero:** Criar uma conta informando meus dados acadêmicos (Nome, E-mail institucional, CPF, RA, Curso)
+- **Para que:** Eu possa acessar os serviços do sistema digital de atendimento.
 - **Critérios de Aceitação (Gherkin):**
   ```gherkin
-  Cenário: Login com credenciais válidas
-    Dado que estou na tela de login
-    Quando informo o e-mail "mariana.oliveira@faculdade.edu.br" e a senha correta
-    Então o sistema deve me redirecionar para o Dashboard do Estudante com meus dados carregados.
-
-  Cenário: Tentativa com credenciais inválidas
-    Dado que estou na tela de login
-    Quando informo uma senha incorreta
-    Então o sistema deve exibir alerta "Credenciais inválidas" sem revelar se o e-mail existe.
+  Cenário: Cadastro bem-sucedido com dados válidos
+    Dado que estou no formulário de criação de conta
+    Quando preencho todos os campos obrigatórios com formato correto
+    E confirmo o envio do cadastro
+    Então o sistema deve criar a conta e permitir meu login imediato.
   ```
 
-#### 🔹 US-02: Seleção de Serviços Acadêmicos com Indicação Clara de SLA
-- **Como:** Estudante universitário
-- **Quero:** Visualizar um catálogo claro de tipos de solicitações com o prazo estimado de resposta
-- **Para que:** Eu saiba antecipadamente quanto tempo levará para meu requerimento ser concluído.
+#### 🔹 US02: Autenticação de Usuário (Login)
+- **Como:** Usuário cadastrado (Aluno, Professor, Secretaria, Gestor)
+- **Quero:** Realizar login informando e-mail/CPF e senha
+- **Para que:** Eu acesse minhas solicitações e ferramentas autorizadas com segurança.
 - **Critérios de Aceitação (Gherkin):**
   ```gherkin
-  Cenário: Exibição correta do prazo de atendimento
-    Dado que acesso a tela de "Nova Solicitação"
-    Quando visualizo o card "Declaração de Matrícula"
-    Então o sistema deve exibir a informação de prazo "até 1 dia útil"
-    E a lista de documentos necessários deve informar "Nenhum documento adicional obrigatório".
+  Cenário: Autenticação com credenciais válidas
+    Dado que informo credenciais corretas cadastradas
+    Quando clico em "Entrar"
+    Então sou direcionado ao ambiente correspondente ao meu perfil de acesso.
   ```
 
-#### 🔹 US-03: Abertura de Solicitação com Upload de Documentos Comprobatórios
-- **Como:** Estudante (Mariana)
-- **Quero:** Anexar arquivos (PDF, JPG, PNG) ao justificar faltas ou solicitar dispensa de disciplinas
-- **Para que:** A secretaria tenha as evidências necessárias para validar meu requerimento sem retrabalho.
+#### 🔹 US03: Abertura de Solicitação Acadêmica
+- **Como:** Aluno
+- **Quero:** Registrar uma nova demanda acadêmica escolhendo o tipo de serviço, informando descrição e anexando arquivos
+- **Para que:** A secretaria receba meu pedido e inicie a tramitação com protocolo oficial.
 - **Critérios de Aceitação (Gherkin):**
   ```gherkin
-  Cenário: Upload de documento válido
-    Dado que selecionei o serviço "Envio de Atestado Médico"
-    Quando seleciono um arquivo PDF com menos de 5MB
-    Então o arquivo deve ser listado com nome legível e opção de remoção antes do envio.
-
-  Cenário: Bloqueio de submissão sem preenchimento da descrição
-    Dado que selecionei um serviço mas deixei o campo de descrição em branco
-    Quando clico no botão "Enviar Solicitação"
-    Então o sistema bloqueia o envio e avisa "Por favor, descreva detalhadamente a sua solicitação".
+  Cenário: Abertura de solicitação com geração de protocolo
+    Dado que preenchi o formulário de solicitação com tipo e descrição válidos
+    Quando submeto o requerimento
+    Então o sistema deve gerar um número de protocolo único no formato "SDASA-2026-XXXX"
+    E registrar o prazo estimado (SLA) de atendimento.
   ```
 
-#### 🔹 US-04: Geração Dinâmica de Protocolo Oficial e Comprovante de Envio
-- **Como:** Estudante (Mariana)
-- **Quero:** Receber imediatamente após o envio um número oficial de protocolo no formato `#SDASA-2026-XXXX`
-- **Para que:** Eu tenha valor legal e comprobatório de que submeti meu pedido dentro do prazo acadêmico.
+#### 🔹 US04: Acompanhamento de Status
+- **Como:** Aluno
+- **Quero:** Acompanhar a situação corrente da minha solicitação em tempo real
+- **Para que:** Eu saiba a fase exata de tramitação sem necessidade de comparecimento presencial.
 - **Critérios de Aceitação (Gherkin):**
   ```gherkin
-  Cenário: Sucesso na geração de protocolo
-    Dado que enviei com sucesso uma solicitação
-    Quando sou direcionado para a tela de confirmação
-    Então o protocolo exibido deve obedecer à máscara "SDASA-2026-[0-9]{4}"
-    E a data limite de conclusão calculada deve corresponder à data atual somada ao SLA do serviço.
+  Cenário: Exibição clara de status
+    Dado que possuo solicitações ativas
+    Quando acesso o painel principal
+    Então vejo o status atualizado de cada demanda com badges visuais distintas.
   ```
 
-#### 🔹 US-05: Painel de Controle de Solicitações para Secretaria (Triagem e Despacho)
-- **Como:** Analista da Secretaria Acadêmica (Carlos Eduardo)
-- **Quero:** Filtrar todas as solicitações pendentes por status e despachar com parecer formal
-- **Para que:** A secretaria mantenha os prazos de atendimento (SLA) sob estrito controle operacional.
+#### 🔹 US05: Consulta de Histórico
+- **Como:** Aluno
+- **Quero:** Consultar todas as solicitações anteriores já finalizadas ou canceladas
+- **Para que:** Eu mantenha controle comprobatório dos documentos e pedidos que já protocolei.
 - **Critérios de Aceitação (Gherkin):**
   ```gherkin
-  Cenário: Despacho e alteração de status
-    Dado que estou logado como perfil Secretaria
-    Quando abro a modal de despacho da solicitação "#SDASA-2026-1042"
-    E seleciono o status "Deferido" preenchendo o parecer "Documento emitido com sucesso"
-    Então a solicitação deve ter seu status atualizado para "approved"
-    E uma notificação deve ser gerada automaticamente para a aluna Mariana.
+  Cenário: Acesso ao histórico completo
+    Dado que solicito a exibição de solicitações anteriores
+    Quando filtro por demandas concluídas
+    Então visualizo a data de emissão, histórico de tramitação e parecer oficial.
   ```
 
-#### 🔹 US-06: Linha do Tempo Visual do Ciclo de Vida do Pedido
-- **Como:** Estudante ou funcionário da secretaria
-- **Quero:** Consultar o histórico completo de etapas percorridas por uma solicitação
-- **Para que:** Haja transparência de quem executou cada ação e em que momento.
+#### 🔹 US06: Notificações de Alteração
+- **Como:** Usuário
+- **Quero:** Receber avisos no sistema sempre que houver atualização em uma solicitação
+- **Para que:** Eu seja informado proativamente de deferimentos, pendências ou conclusões.
 - **Critérios de Aceitação (Gherkin):**
   ```gherkin
-  Cenário: Visualização de histórico
-    Dado que clico no botão "Detalhes" de uma solicitação ativa
-    Quando a modal de detalhes se abre
-    Então deve ser exibida a linha do tempo com: Data de Abertura, Triagem, Análise e Parecer Final.
+  Cenário: Notificação de atualização
+    Dado que a secretaria despachou uma solicitação minha
+    Quando o status muda para "Em Tramitação" ou "Concluído"
+    Então recebo um alerta no sino de notificações com os detalhes da mudança.
   ```
 
-#### 🔹 US-07: Notificações no Sistema e Feedback de Alteração de Status
-- **Como:** Estudante (Mariana)
-- **Quero:** Receber alertas na central de notificações sempre que meu pedido mudar de status
-- **Para que:** Eu não precise ir até a faculdade ou mandar e-mails cobrando resposta.
+#### 🔹 US07: Gestão e Administração de Solicitações
+- **Como:** Secretaria acadêmica
+- **Quero:** Visualizar, filtrar, analisar e despachar as demandas protocoladas
+- **Para que:** O setor mantenha a organização e o fluxo ordenado de atendimento escolar.
 - **Critérios de Aceitação (Gherkin):**
   ```gherkin
-  Cenário: Notificação de conclusão de pedido
-    Dado que o status da solicitação da aluna Mariana foi alterado para "approved"
-    Quando a aluna abre a aplicação
-    Então o sino de notificações deve indicar um novo item não lido informando o deferimento.
+  Cenário: Despacho administrativo
+    Dado que estou logado com o perfil Secretaria
+    Quando analiso uma demanda e emito o parecer com alteração de status
+    Então a solicitação é atualizada e a resposta fica registrada na timeline.
   ```
 
-#### 🔹 US-08: Anonimização e Conformidade LGPD de Dados Sensíveis
-- **Como:** Encarregada de Segurança e Privacidade (Maria Luiza)
-- **Quero:** Que o CPF e dados de contato do aluno sejam mascarados nas visualizações gerais
-- **Para que:** O SDASA atenda integralmente à Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
+#### 🔹 US08: Controle de Prazos e Pendências
+- **Como:** Secretaria acadêmica
+- **Quero:** Identificar solicitações com prazos de SLA próximos do vencimento ou pendências de documentos
+- **Para que:** O atendimento ocorra dentro dos prazos regulamentares sem atrasos.
 - **Critérios de Aceitação (Gherkin):**
   ```gherkin
-  Cenário: Mascaramento de CPF em listagens públicas
-    Dado que uma listagem exibe dados de cadastro de usuários
-    Quando o CPF do aluno é renderizado
-    Então os dígitos centrais devem ser ocultados (ex: "123.***.***-00").
+  Cenário: Identificação de prazos críticos
+    Dado que existem solicitações na fila da secretaria
+    Quando acesso o painel de controle
+    Então o sistema destaca visualmente os prazos limites e alertas de pendência.
+  ```
+
+#### 🔹 US09: Comunicação Vinculada à Solicitação
+- **Como:** Instituição (Secretaria / Docentes) e Usuário (Aluno)
+- **Quero:** Trocar mensagens e esclarecimentos diretamente vinculados ao protocolo da solicitação
+- **Para que:** Todo o diálogo permaneça registrado no histórico formal do processo acadêmico.
+- **Critérios de Aceitação (Gherkin):**
+  ```gherkin
+  Cenário: Envio de mensagem na solicitação
+    Dado que abro os detalhes de uma solicitação com dúvidas ou orientações
+    Quando envio uma mensagem no canal da solicitação
+    Então o texto é associado ao protocolo e visível para as partes autorizadas.
+  ```
+
+#### 🔹 US10: Indicadores e Relatórios Gerenciais
+- **Como:** Gestor acadêmico
+- **Quero:** Visualizar indicadores de atendimento, volume de demandas e taxa de cumprimento de prazos
+- **Para que:** A gestão acompanhe a eficiência dos processos e tome decisões estratégicas.
+- **Critérios de Aceitação (Gherkin):**
+  ```gherkin
+  Cenário: Visualização de relatórios básicos
+    Dado que estou autenticado como Gestor
+    Quando acesso o painel gerencial
+    Então visualizo as métricas consolidadas de SLA, solicitações por tipo e tempo médio.
   ```
 
 ---
 
-### 4.4 Definições Formais de Governança Ágil (DoR e DoD)
+### 4.3 Definições Formais de Governança Ágil (DoR e DoD)
 
 #### 📝 Definition of Ready (DoR) — Quando uma história pode entrar na Sprint:
 1. A User Story possui o formato padrão (*Como / Quero / Para que*).
-2. Os Critérios de Aceitação estão redigidos em formato Gherkin e foram aprovados pela PO (Prof.ª Erika).
-3. As dependências técnicas foram validadas pela Arquiteta (Stephanny).
-4. A estimativa em Story Points foi acordada por consenso na Sprint Planning (Ana Beatriz).
-5. O impacto em segurança da informação e LGPD foi pré-avaliado (Maria Luiza).
+2. Os Critérios de Aceitação estão redigidos em formato Gherkin e foram aprovados pela PO (Prof.ª Erika Miranda).
+3. As dependências técnicas foram validadas pelo Arquiteto de Software (Maria Luiza Dias Silva Tavares).
+4. O alinhamento de negócio e indicadores foi validado pela Analista de Negócios (Ana Beatriz Cruz da Silva).
+5. A estimativa em Story Points e facilitação foi organizada pelo Scrum Master (Donald Cintado Cabezas).
+6. O impacto em segurança da informação e privacidade (LGPD) foi avaliado pela Security Officer (Stephanny Crepalde Costa).
 
 #### ✅ Definition of Done (DoD) — Quando uma história pode ser considerada pronta:
-1. O código foi desenvolvido e atende a 100% dos critérios de aceitação.
-2. Não há erros no console do navegador nem falhas de lint estático.
-3. Testes unitários foram implementados e executam com 100% de sucesso (`npm test`).
+1. O código foi desenvolvido pelo time de Dev/DevOps (Allan Vinícius Cabeggi Alvarenga) e atende a 100% dos critérios.
+2. Não há erros no console do navegador nem falhas de sintaxe/lint estático.
+3. Testes unitários automatizados foram implementados e validados pelo Analista de QA (Júlio César Benício Inácio) com 100% de sucesso (`npm test`).
 4. O código foi revisado por pelo menos um colega via Pull Request (Peer Review).
 5. O pipeline de CI/CD foi executado no GitHub Actions com status **Success (Verde)**.
-6. A funcionalidade foi validada no ambiente de homologação (`develop`) ou demonstrada ao PO.
+6. A funcionalidade foi validada no ambiente de homologação (`develop`) ou demonstrada à PO.
 
 ---
 
@@ -322,12 +331,12 @@ graph TD
 
 ### 5.1 Boas Práticas Adotadas
 - **Shift-Left Security:** Análise de vulnerabilidades desde as primeiras linhas de código. Nenhum token, senha ou chave pode entrar no histórico do Git.
-- **Pair Programming:** Sessões de pareamento entre Júlio (DevOps) e Allan (QA) para garantir testabilidade imediata.
+- **Pair Programming:** Sessões de pareamento entre Allan (Dev/DevOps) e Júlio (QA) para garantir testabilidade imediata.
 - **Templates Padronizados:** Uso obrigatório de templates para novas Issues (`.github/ISSUE_TEMPLATE/`) e Pull Requests (`.github/PULL_REQUEST_TEMPLATE.md`).
 
 ---
 
-## 6. 🧪 Processo de Testes (Estratégia de QA — Allan Vinícius)
+## 6. 🧪 Processo de Testes (Estratégia de QA — Júlio César Benício Inácio)
 
 A estratégia de testes do SDASA adota o modelo clássico da **Pirâmide de Testes**, garantindo maior cobertura na base (mais rápida e barata) e validações criteriosas no topo:
 
@@ -370,12 +379,12 @@ A estratégia de testes do SDASA adota o modelo clássico da **Pirâmide de Test
      7. Verificação do protocolo e prazo estimado.
      8. Acompanhamento no histórico e notificação de status.
 
-4. **Testes de Segurança (SecOps — Maria Luiza):**
+4. **Testes de Segurança (SecOps — Stephanny Crepalde Costa):**
    - Varredura automatizada no CI contra presença inadvertida de chaves privadas (`BEGIN PRIVATE KEY`) e arquivos `.env` versionados.
 
 ---
 
-## 7. 🚀 Processo de Entrega Contínua (CI/CD — Júlio César)
+## 7. 🚀 Processo de Entrega Contínua (CI/CD — Allan Vinícius Cabeggi Alvarenga)
 
 A esteira de integração e entrega contínua está implementada no arquivo `.github/workflows/ci-cd.yml` e divide-se em 4 estágios essenciais:
 
@@ -430,7 +439,7 @@ Uma vez em produção, o produto é acompanhado continuamente para antecipar fal
 - **Métricas de Negócio:**
   - Taxa de cumprimento de SLA (% de solicitações atendidas dentro do prazo estipulado).
   - Volume diário de abertura por tipo de serviço acadêmico (identificando gargalos na secretaria).
-- **Cultura de Blameless Post-Mortem:** Sempre que um incidente ocorrer em produção, a equipe se reúne sob facilitação da Scrum Master (Ana Beatriz) para documentar: causa raiz, tempo de detecção, impacto e plano de ação preventivo, sem culpabilização individual.
+- **Cultura de Blameless Post-Mortem:** Sempre que um incidente ocorrer em produção, a equipe se reúne sob facilitação do Scrum Master (Donald Cintado Cabezas) para documentar: causa raiz, tempo de detecção, impacto e plano de ação preventivo, sem culpabilização individual.
 
 ---
 

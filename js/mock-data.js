@@ -40,6 +40,30 @@ const INITIAL_USERS = [
     course: "Tópicos Avançados em Sistemas de Informação II",
     semester: "Corpo Docente",
     avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "user_gestor",
+    name: "Dr. Roberto Guimarães",
+    role: "manager",
+    roleLabel: "Gestor Acadêmico",
+    email: "gestao@faculdade.edu.br",
+    cpf: "321.654.987-33",
+    ra: "GES-2026",
+    course: "Diretoria e Planejamento Acadêmico",
+    semester: "Gestão Institucional",
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "user_admin",
+    name: "Administrador do Sistema",
+    role: "admin",
+    roleLabel: "Administrador de TI",
+    email: "admin@faculdade.edu.br",
+    cpf: "111.222.333-44",
+    ra: "ADM-0001",
+    course: "Núcleo de Tecnologia da Informação",
+    semester: "Suporte e Governança",
+    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80"
   }
 ];
 
@@ -155,7 +179,23 @@ const INITIAL_REQUESTS = [
         downloadUrl: "#comprovante"
       }
     ],
-    responseNotes: "Declaração emitida com assinatura digital ICP-Brasil. Válida por 90 dias."
+    responseNotes: "Declaração emitida com assinatura digital ICP-Brasil. Válida por 90 dias.",
+    messages: [
+      {
+        id: "msg_1",
+        senderName: "Mariana Oliveira",
+        senderRole: "student",
+        time: "28/08/2026 às 09:35",
+        text: "Prezados, anexei a declaração do RH da empresa solicitando a grade horária do 4º semestre."
+      },
+      {
+        id: "msg_2",
+        senderName: "Carlos Eduardo (Secretaria)",
+        senderRole: "secretary",
+        time: "28/08/2026 às 14:15",
+        text: "Olá Mariana, documento conferido. A declaração foi emitida com autenticação digital."
+      }
+    ]
   },
   {
     id: "SDASA-2026-0845",
@@ -188,7 +228,23 @@ const INITIAL_REQUESTS = [
         actor: "Carlos Eduardo (Secretaria)"
       }
     ],
-    responseNotes: "Em análise pelo corpo docente para registro do abono."
+    responseNotes: "Em análise pelo corpo docente para registro do abono.",
+    messages: [
+      {
+        id: "msg_3",
+        senderName: "Mariana Oliveira",
+        senderRole: "student",
+        time: "30/08/2026 às 14:20",
+        text: "Enviei o atestado com carimbo CRM legível. Solicito reposição das atividades práticas."
+      },
+      {
+        id: "msg_4",
+        senderName: "Carlos Eduardo (Secretaria)",
+        senderRole: "secretary",
+        time: "31/08/2026 às 10:05",
+        text: "Atestado validado e despachado à coordenação para agendamento dos exercícios domiciliares."
+      }
+    ]
   },
   {
     id: "SDASA-2026-0870",
@@ -215,7 +271,16 @@ const INITIAL_REQUESTS = [
         actor: "Sistema SDASA"
       }
     ],
-    responseNotes: "Aguardando triagem na fila de atendimento da Secretaria."
+    responseNotes: "Aguardando triagem na fila de atendimento da Secretaria.",
+    messages: [
+      {
+        id: "msg_5",
+        senderName: "Mariana Oliveira",
+        senderRole: "student",
+        time: "01/09/2026 às 08:25",
+        text: "Comprovante da taxa anexado. Gostaria de saber se posso retirar na secretaria na quinta-feira."
+      }
+    ]
   },
   {
     id: "SDASA-2026-0862",
@@ -242,7 +307,16 @@ const INITIAL_REQUESTS = [
         actor: "Pedro Henrique Alves"
       }
     ],
-    responseNotes: "Aguardando parecer do docente."
+    responseNotes: "Aguardando parecer do docente.",
+    messages: [
+      {
+        id: "msg_6",
+        senderName: "Pedro Henrique Alves",
+        senderRole: "student",
+        time: "31/08/2026 às 16:45",
+        text: "Apresentei no anexo a justificativa teórica com base no gabarito."
+      }
+    ]
   }
 ];
 
