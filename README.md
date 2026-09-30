@@ -1,124 +1,137 @@
-# SDASA — Sistema Digital de Atendimento e Solicitações Acadêmicas
+# SDASA — Atendimento e Solicitações Acadêmicas
 
-**Projeto Integrador — Módulo 1: Da Ideia ao Produto (2026)**  
-**Curso:** Análise e Desenvolvimento de Sistemas  
-**Disciplina:** Tópicos Avançados em Sistemas de Informação II  
-**Orientação:** Prof.ª Erika Miranda
+Projeto Integrador de Análise e Desenvolvimento de Sistemas — Módulos 1 e 2. Evolução do protótipo para uma aplicação com frontend JavaScript, API Node.js e banco SQLite persistente.
 
----
+O sistema permite cadastro/login, abertura com anexos, consulta por protocolo, triagem, encaminhamento ao professor, complementação, mensagens, notificações individuais e indicadores. O administrador configura serviços, perfis e feriados. O visual mantém a identidade azul, com recursos locais, layout responsivo e navegação por teclado.
 
-## 📖 Sobre o Projeto
+## Executar uma demonstração
 
-O **SDASA** é uma solução digital concebida para centralizar, desburocratizar e agilizar o fluxo de solicitações acadêmicas entre estudantes, docentes e secretaria da instituição de ensino. O sistema substitui atendimentos presenciais fragmentados e múltiplos canais dispersos por uma plataforma unificada com acompanhamento em tempo real, controle de prazos (SLA) e transparência de status.
+Requisito: **Node.js 24.21 ou superior**. A aplicação usa somente módulos nativos em runtime.
 
----
-
-## 🖥️ Telas do Protótipo (Mapeamento Conforme Seção 5.4)
-
-| Nº | Tela | Elementos Principais | Objetivo |
-|:---:|:---|:---|:---|
-| **1** | **Tela Inicial** | Logo institucional, apresentação da plataforma, benefícios, botões "Entrar" e "Criar Conta". | Apresentar a plataforma aos usuários. |
-| **2** | **Login** | E-mail/CPF, senha, botão "Entrar", "Esqueci minha senha", atalhos de perfil (Aluno, Secretaria, Professor). | Permitir a autenticação segura do usuário. |
-| **3** | **Tela Principal (Dashboard)** | Menu superior/lateral, resumo de métricas por status, botão em destaque **"Nova Solicitação"**, tabela de histórico e central de notificações. | Centralizar as informações e solicitações ativas. |
-| **4** | **Nova Solicitação** | Catálogo de tipos de atendimento (Declaração, Histórico, Justificativa, etc.), campo de descrição detalhada, upload de anexos e botão de envio. | Registrar uma nova demanda acadêmica. |
-| **5** | **Resultado / Confirmação** | Número de protocolo oficial gerado dinamicamente (`#SDASA-2026-XXXX`), data/hora, status inicial, prazo estimado, botão para acompanhar e imprimir comprovante. | Confirmar envio e permitir acompanhamento formal. |
-
----
-
-## 🧪 Roteiro de Teste de Usabilidade (Seção 5.5)
-
-O protótipo conta com um **Widget Flutuante de Guia de Teste** no canto inferior direito que acompanha e valida interativamente cada passo da avaliação:
-
-1. **Acessar a tela inicial** — Apresentação da proposta de valor e serviços disponíveis.
-2. **Realizar o login** — Autenticação com a persona principal (**Mariana Oliveira**).
-3. **Localizar "Nova Solicitação"** — Clique no botão de destaque no painel principal.
-4. **Selecionar o tipo de atendimento** — Escolha entre os 7 serviços acadêmicos parametrizados.
-5. **Preencher a descrição** — Detalhamento do pedido e anexos opcionais.
-6. **Enviar a solicitação** — Submissão do formulário com validação de dados.
-7. **Identificar o protocolo gerado** — Visualização do código único de rastreamento e prazo estimado.
-8. **Verificar o status** — Acompanhamento no painel, linha do tempo detalhada e recebimento de notificações.
-
----
-
-## 👥 Perfis Simulados para Apresentação
-
-- 🎓 **Mariana Oliveira (Aluno / Persona Principal):** Estudante de ADS (4º Semestre), com dores de deslocamento e falta de previsibilidade de prazos.
-- 🏛️ **Carlos Eduardo Santos (Secretaria Acadêmica):** Permite testar a visão administrativa de triagem, despacho de solicitações, alteração de status e emissão de pareceres oficiais.
-- 👩‍🏫 **Prof.ª Erika Miranda (Corpo Docente):** Visão de coordenação e pareceres acadêmicos.
-
----
-
-## 🚀 Como Executar o Protótipo
-
-Não é necessária nenhuma instalação de dependências ou servidores complexos:
-
-1. Abra o arquivo **`index.html`** diretamente em qualquer navegador moderno (Chrome, Edge, Firefox, Safari).
-2. Para executar via servidor local rápido (opcional):
-   ```bash
-   # Com Python 3
-   python -m http.server 8080
-   
-   # Ou com Node.js (npx)
-   npx serve .
-   ```
-3. Acesse `http://localhost:8080` no navegador.
-
----
-
-## 📂 Estrutura de Arquivos
-
-```
-SDASA/
-├── index.html        # Estrutura completa das 5 telas, modais e componentes
-├── css/
-│   └── style.css     # Estilos complementares, animações, badges e regras de impressão
-├── js/
-│   ├── mock-data.js  # Base de dados simulada (usuários, catálogo de serviços e histórico)
-│   └── app.js        # Lógica de controle, roteamento de telas, persistência e testes
-├── tests/
-│   └── sdasa-core.test.js # Testes automatizados das regras de negócio (Node.js)
-├── DEVOPS.md         # Documentação mestre de DevOps (Atividade 4 - Módulo 1)
-├── REQUISITOS.md     # Documentação mestre de Requisitos (Parte II - Módulo 2)
-└── README.md         # Documentação e manual de uso do protótipo
-```
-
----
-
-## 📐 Engenharia de Software — Especificação de Requisitos (Parte II — Módulo 2)
-
-O projeto evolui a partir do Design Thinking e DevOps para uma especificação formal de requisitos de software:
-👉 **[REQUISITOS.md](REQUISITOS.md)**
-
-### Principais Definições da Parte II:
-- **10 Regras de Negócio (RN01 a RN10):** Protocolo único, validação de acesso, visibilidade restrita, integridade de status e comunicação vinculada.
-- **10 Histórias de Usuário (US01 a US10):** Do cadastro de aluno (US01) à consulta de indicadores pelo gestor (US10).
-- **12 Requisitos Funcionais (RF01 a RF12) & 4 Requisitos Não Funcionais (RNF01 a RNF04):** Usabilidade, Segurança, Disponibilidade e Manutenibilidade.
-- **6 Casos de Uso com Diagrama UML (UC01 a UC06):** Atores Aluno, Professor, Secretaria, Gestor e Administrador.
-- **Matriz de Rastreabilidade Simplificada:** Garantia de cobertura integral entre necessidades, histórias, requisitos e casos de uso.
-
----
-
-## 🛠️ Engenharia de Software & DevOps (Atividade 4)
-
-Este projeto adota práticas avançadas de **DevOps** para transformar o protótipo em um produto digital entregue continuamente com estabilidade e previsibilidade.
-
-Para a documentação completa dos 8 pilares avaliados na **Atividade 4**, acesse o documento mestre:
-👉 **[DEVOPS.md](DEVOPS.md)**
-
-### Resumo da Esteira DevOps Implementada:
-- **Repositório Git & Branches:** Modelo baseado em Gitflow/GitHub Flow com branches `main` (produção protegida) e `develop` (homologação contínua).
-- **Estratégia de Commits:** Padrão rigoroso **Conventional Commits 1.0.0** (`feat:`, `fix:`, `docs:`, `test:`, `ci:`).
-- **Backlog Inicial Oficial:** 10 User Stories (US01 a US10) priorizadas e detalhadas com critérios de aceitação Gherkin.
-- **Processo de Testes:** Suíte de testes unitários automatizados com Node.js nativo cobrindo regras de negócio críticas (SLA, protocolos, RBAC, cadastro, mensagens e indicadores).
-- **CI/CD Pipeline:** Workflow automatizado no GitHub Actions (`.github/workflows/ci-cd.yml`) com validação de sintaxe, bateria de testes, auditoria de segurança e deploy contínuo no GitHub Pages.
-- **Monitoramento & Observabilidade:** Aplicação dos 4 Sinais Dourados (SRE), rastreamento de erros com Sentry e métricas de SLA.
-
-### 🧪 Executando os Testes Automatizados Localmente:
 ```bash
-npm test
+npm run start:demo
 ```
 
----
+Abra **http://localhost:8080**. O comando cria um banco separado em `data/demo/sdasa.sqlite` e cinco contas de teste:
+
+| E-mail                  | Perfil        |
+| ----------------------- | ------------- |
+| `aluno@sdasa.test`      | Aluno         |
+| `secretaria@sdasa.test` | Secretaria    |
+| `professor@sdasa.test`  | Professor     |
+| `gestor@sdasa.test`     | Gestor        |
+| `admin@sdasa.test`      | Administrador |
+
+Senha inicial de todas as contas demonstrativas: **`Demonstracao!2026`**. O comando não redefine contas já existentes. Não há pedidos fictícios pré-carregados: abra um pedido como aluno e use outra sessão/janela privada para atendê-lo como secretaria. A demonstração é recusada quando `NODE_ENV=production`.
+
+**Não abra `index.html` diretamente nem use um servidor apenas estático.** A versão atual precisa da API. Os dados antigos de localStorage não são importados; permanecem no navegador, sem interferir no banco novo.
+
+## Executar com banco próprio
+
+```bash
+npm start
+```
+
+Por padrão, o banco fica em `data/sdasa.sqlite`; cadastro pela interface cria somente alunos. Para criar o primeiro administrador, defina `ADMIN_EMAIL` e `ADMIN_PASSWORD` no ambiente e execute `npm run create-admin`. O comando recusa e-mails existentes e não modifica contas previamente criadas. Remova a variável de senha após executar.
+
+Exemplo PowerShell com entrada de senha oculta:
+
+```powershell
+$env:ADMIN_EMAIL = Read-Host 'E-mail do administrador'
+$taskAdminSecret = Read-Host 'Senha com pelo menos 12 caracteres' -AsSecureString
+$env:ADMIN_PASSWORD = [System.Net.NetworkCredential]::new('', $taskAdminSecret).Password
+npm run create-admin
+Remove-Item Env:ADMIN_PASSWORD
+npm start
+```
+
+O administrador pode alterar o perfil das contas cadastradas para secretaria, professor ou gestor. Essa alteração encerra as sessões anteriores do usuário. O login usa e-mail; CPF não é coletado. RA e curso são informativos e não são verificados contra um sistema institucional.
+
+## Fluxo de atendimento
+
+1. Aluno cria conta, entra, escolhe serviço, descreve a demanda e anexa documentos quando exigidos.
+2. O servidor gera protocolo único, calcula prazo e confirma a gravação.
+3. Secretaria abre os detalhes, registra triagem e encaminha um responsável quando necessário.
+4. Professor atribuído consulta e envia parecer na conversa; somente secretaria/admin alteram o atendimento administrativo.
+5. Secretaria pode pedir complementação; o aluno responde e o pedido volta à análise.
+6. Secretaria conclui ou indefere com parecer. O histórico e os documentos continuam disponíveis.
+7. Gestor consulta indicadores agregados por período; administrador configura catálogo e calendário.
+
+Prazos contam segunda a sexta, excluindo feriados cadastrados, com vencimento às 18h de São Paulo. Complementação não suspende a contagem. Mudanças de serviço/calendário valem para novos pedidos. Encerrados não são reabertos nesta versão.
+
+Anexos: PDF, PNG e JPG, até 5 MB por arquivo, 5 por operação e 20 por solicitação. O conteúdo fica privado no banco; download exige acesso ao pedido. O comprovante é de envio, não um documento acadêmico assinado.
+
+## Recuperação de senha
+
+Em desenvolvimento, sem integração de e-mail, as mensagens são gravadas em `data/outbox/*.json` (ou `data/demo/outbox` na demonstração). O operador local pode abrir o `resetUrl` para testar o fluxo. Esses arquivos não são servidos pela aplicação nem versionados. O link expira em 30 minutos, só pode ser utilizado uma vez e a redefinição invalida as sessões anteriores.
+
+Para entrega por e-mail, configure `MAIL_WEBHOOK_URL` e opcionalmente `MAIL_WEBHOOK_TOKEN`. O contrato está em [docs/API.md](docs/API.md). Sem essa integração em produção, a entrega de e-mail não funciona e é registrado `mail.failed`; não foi configurado um provedor externo neste repositório.
+
+## Configuração
+
+| Variável             | Padrão / finalidade                                               |
+| -------------------- | ----------------------------------------------------------------- |
+| `PORT`               | `8080`                                                            |
+| `HOST`               | `127.0.0.1`; use `0.0.0.0` apenas quando a hospedagem precisar    |
+| `SDASA_DATA_DIR`     | `data`; pasta privada e persistente                               |
+| `PUBLIC_ORIGIN`      | Local: `http://localhost:PORT`; obrigatória com HTTPS em produção |
+| `NODE_ENV`           | Defina `production` na hospedagem para cookies Secure e HSTS      |
+| `MAIL_WEBHOOK_URL`   | Endpoint HTTPS de entrega de e-mail                               |
+| `MAIL_WEBHOOK_TOKEN` | Credencial opcional do endpoint                                   |
+
+O servidor não carrega `.env` automaticamente. Use variáveis do ambiente ou `node --env-file=.env server/app.js`. `.env.example` contém apenas exemplos. A URL usada no navegador deve corresponder exatamente à origem configurada; trocar `localhost` por `127.0.0.1` exige ajustar `PUBLIC_ORIGIN`.
+
+## Testar e validar
+
+```bash
+npm ci
+npm run lint
+npm test
+npm run test:e2e
+```
+
+No Windows, os testes de navegador usam o Edge instalado. Em outros sistemas, execute `npx playwright install chromium` antes de `npm run test:e2e`. É possível configurar `PLAYWRIGHT_CHANNEL`. O servidor de testes usa a porta 8098 e um banco temporário, separado da demonstração. Traces e capturas ficam em `test-results`; o relatório HTML fica em `playwright-report`.
+
+Os testes importam as regras usadas pela aplicação, chamam a API HTTP e percorrem o atendimento no navegador. O roteiro de avaliação humana e os limites das evidências estão em [docs/VALIDACAO.md](docs/VALIDACAO.md).
+
+## Backup e restauração
+
+```bash
+npm run backup
+npm run restore -- backups/arquivo.sqlite data-restaurada
+```
+
+O backup usa a API de snapshot do SQLite, incluindo anexos, e é gravado em `backups/`. A restauração verifica integridade e exige um **diretório que ainda não exista**, para não sobrescrever dados. Pare o servidor, configure `SDASA_DATA_DIR` para a pasta restaurada e reinicie. Para copiar a demonstração, defina antes `SDASA_DATA_DIR=data/demo`.
+
+Backups contêm dados pessoais e documentos: armazene-os em local privado. A automação periódica e a cópia para outro dispositivo são tarefas da hospedagem, não estão executando por este projeto.
+
+## Arquitetura e documentação
+
+- [REQUISITOS.md](REQUISITOS.md): requisitos do Módulo 2 preservados da main.
+- [docs/BACKLOG.md](docs/BACKLOG.md): dez histórias oficiais e critérios de aceite.
+
+- [PLANEJAMENTO.md](PLANEJAMENTO.md): diagnóstico, prioridades e critérios acordados.
+- [docs/README_ORIGINAL.md](docs/README_ORIGINAL.md): conteúdo do README antigo, preservado como registro do protótipo do Módulo 1.
+- [docs/ARQUITETURA.md](docs/ARQUITETURA.md): diagrama, MVC + DAO, monólito × microsserviços e rastreabilidade.
+- [docs/CASOS_DE_USO.md](docs/CASOS_DE_USO.md): configuração, análise e condução para a Atividade 5.
+- [docs/API.md](docs/API.md): contratos, permissões e limites.
+- [DEVOPS.md](DEVOPS.md): validação, empacotamento, publicação e operação.
+- [docs/VALIDACAO.md](docs/VALIDACAO.md): evidências e roteiro de usabilidade.
+
+```text
+server/        API, autenticação, serviços e DAO SQLite
+shared/        Regras de negócio usadas no servidor, interface e testes
+js/, css/      Frontend local, sem CDN
+scripts/       Execução demonstrativa, administração, validação e backup
+tests/         Testes unitários, HTTP e navegador
+docs/          Arquitetura, contratos e entrega acadêmica
+```
+
+## Publicação e limites atuais
+
+O workflow valida e empacota a aplicação completa. **GitHub Pages não executa o backend**; o deploy estático anterior foi substituído por um artefato de entrega. É necessário configurar hospedagem Node, volume persistente, HTTPS e serviço de e-mail. Há um Dockerfile como base para essa configuração, sem implantação externa automática.
+
+A versão usa uma instância, SQLite, anexos em BLOB, métricas e limitação de requisições locais ao processo. Notificações são consultadas a cada 30 segundos. Listas ainda não têm paginação e o dimensionamento de carga não foi medido. Verificação de tipo de arquivo não é análise antivírus. Monitor externo, alertas, avaliação com usuários e política institucional de retenção de dados permanecem para configuração/validação da equipe.
 
 ## 👥 Equipe do Projeto Integrador (Módulo 1 & Módulo 2)
 
