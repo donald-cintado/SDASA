@@ -1,1027 +1,510 @@
-/**
- * SDASA - Sistema Digital de Atendimento e Solicitações Acadêmicas
- * Aplicação Principal do Protótipo (State, Navegação e Interatividade)
- * Projeto Integrador - Módulo 1 (2026)
- */
+import {
+  ROLES,
+  STATUSES,
+  TRANSITIONS,
+  canTransition,
+  isOverdue,
+  validateAttachment,
+  MAX_FILES,
+} from "/shared/core.js";
 
-// Ícones SVG embutidos para garantir 100% de funcionamento mesmo offline ou sem CDN
-const ICONS = {
-  checkCircle: `<svg class="w-4 h-4 text-emerald-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
-  circle: `<svg class="w-4 h-4 text-slate-300 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"></circle></svg>`,
-  document: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>`,
-  clock: `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
-};
+const $ = (selector) => document.querySelector(selector);
+const escape = (value) =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
+  );
+const date = (value) =>
+  new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date(value));
+const badge = (status) =>
+  `<span class="badge ${escape(status)}">${escape(STATUSES[status] || status)}</span>`;
+const slaLabel = (days) => `${days} ${days === 1 ? "dia útil" : "dias úteis"}`;
+const errorSlot = '<p class="form-error error" role="alert"></p>';
+const fileInput =
+  '<label>Documentos (PDF, PNG ou JPG)<input type="file" name="attachments" accept=".pdf,.png,.jpg,.jpeg" multiple><span class="hint">Até 5 arquivos por envio, com até 5 MB cada. Somente pessoas autorizadas podem baixá-los.</span></label>';
 
 class SDASAApp {
   constructor() {
-    window.app = this; // Garante referência global imediata
-    this.currentUser = null;
+    this.user = null;
     this.requests = [];
+    this.services = [];
     this.notifications = [];
-    this.currentFilter = 'all';
-    this.searchTerm = '';
-    this.selectedService = null;
-    this.uploadedFiles = [];
-    this.lastCreatedRequest = null;
-    
-    // Checklist do Teste de Usabilidade (Item 5.5 do Documento)
-    this.testChecklist = {
-      step1: false, // Acessar tela inicial
-      step2: false, // Realizar login
-      step3: false, // Localizar Nova solicitação
-      step4: false, // Selecionar tipo de atendimento
-      step5: false, // Preencher descrição
-      step6: false, // Enviar solicitação
-      step7: false, // Identificar protocolo gerado
-      step8: false  // Verificar status
-    };
-
+    this.screen = "home";
+    this.request = null;
+    this.filter = { search: "", status: "", overdue: false };
+    this.viewVersion = 0;
+    this.initializing = true;
+    this.resetToken = new URLSearchParams(location.search).get("reset");
+    if (this.resetToken) history.replaceState(null, "", "/");
+    document.addEventListener("click", (event) => this.click(event));
+    document.addEventListener("submit", (event) => this.submit(event));
     this.init();
   }
-
-  init() {
+  async api(path, method = "GET", body) {
+    const userAtStart = this.user?.id;
+    let response;
     try {
-      this.loadState();
-      this.setupEventListeners();
-      this.renderServicesGrid();
-      this.updateUsabilityGuide();
-      
-      // Inicia na Tela Inicial (Tela 1 do fluxo)
-      this.showScreen('home');
-      this.markTestStep('step1');
-
-      this.refreshIcons();
-    } catch (err) {
-      console.error("Erro na inicialização do SDASAApp:", err);
-    }
-  }
-
-  refreshIcons() {
-    try {
-      if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-      }
-    } catch (e) {
-      console.warn("Lucide icons não inicializado:", e);
-    }
-  }
-
-  loadState() {
-    try {
-      const savedRequests = localStorage.getItem('sdasa_requests');
-      if (savedRequests) {
-        this.requests = JSON.parse(savedRequests);
-      } else {
-        this.requests = (typeof INITIAL_REQUESTS !== 'undefined') ? [...INITIAL_REQUESTS] : [];
-        this.saveRequests();
-      }
-
-      const savedNotifications = localStorage.getItem('sdasa_notifications');
-      if (savedNotifications) {
-        this.notifications = JSON.parse(savedNotifications);
-      } else {
-        this.notifications = (typeof INITIAL_NOTIFICATIONS !== 'undefined') ? [...INITIAL_NOTIFICATIONS] : [];
-        this.saveNotifications();
-      }
-
-      // Usuário padrão: Mariana Oliveira (Persona do documento)
-      this.currentUser = (typeof INITIAL_USERS !== 'undefined') ? INITIAL_USERS[0] : {
-        id: "user_mariana",
-        name: "Mariana Oliveira",
-        role: "student",
-        roleLabel: "Aluno(a)",
-        email: "mariana.oliveira@faculdade.edu.br",
-        cpf: "123.456.789-00",
-        ra: "2024108842",
-        course: "Análise e Desenvolvimento de Sistemas",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
-      };
-    } catch (e) {
-      console.error("Erro ao carregar estado:", e);
-    }
-  }
-
-  saveRequests() {
-    try {
-      localStorage.setItem('sdasa_requests', JSON.stringify(this.requests));
-    } catch (e) {
-      console.warn("Falha ao salvar solicitações:", e);
-    }
-  }
-
-  saveNotifications() {
-    try {
-      localStorage.setItem('sdasa_notifications', JSON.stringify(this.notifications));
-    } catch (e) {
-      console.warn("Falha ao salvar notificações:", e);
-    }
-  }
-
-  resetData() {
-    if (confirm('Deseja restaurar os dados originais do protótipo? Todas as novas solicitações de teste serão reiniciadas.')) {
-      try {
-        localStorage.removeItem('sdasa_requests');
-        localStorage.removeItem('sdasa_notifications');
-        this.requests = (typeof INITIAL_REQUESTS !== 'undefined') ? [...INITIAL_REQUESTS] : [];
-        this.notifications = (typeof INITIAL_NOTIFICATIONS !== 'undefined') ? [...INITIAL_NOTIFICATIONS] : [];
-        this.saveRequests();
-        this.saveNotifications();
-        this.currentUser = (typeof INITIAL_USERS !== 'undefined') ? INITIAL_USERS[0] : null;
-        this.testChecklist = {
-          step1: true, step2: false, step3: false, step4: false,
-          step5: false, step6: false, step7: false, step8: false
-        };
-        this.updateUsabilityGuide();
-        this.showScreen('home');
-        this.showToast('Dados do protótipo restaurados para o estado inicial!');
-      } catch (e) {
-        console.error("Erro ao reiniciar dados:", e);
-      }
-    }
-  }
-
-  // ==========================================
-  // Navegação de Telas
-  // ==========================================
-  showScreen(screenId) {
-    try {
-      document.querySelectorAll('.screen-view').forEach(screen => {
-        screen.classList.remove('active');
-        screen.style.display = 'none';
+      response = await fetch(`/api${path}`, {
+        method,
+        credentials: "same-origin",
+        headers: body ? { "Content-Type": "application/json" } : {},
+        body: body ? JSON.stringify(body) : undefined,
       });
-
-      const targetScreen = document.getElementById(`screen-${screenId}`);
-      if (targetScreen) {
-        targetScreen.style.display = 'block';
-        setTimeout(() => {
-          targetScreen.classList.add('active');
-        }, 10);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-
-      // Ações contextuais por tela
-      if (screenId === 'home') {
-        this.markTestStep('step1');
-      } else if (screenId === 'login') {
-        const emailInput = document.getElementById('login-email');
-        const passInput = document.getElementById('login-password');
-        if (emailInput && this.currentUser) emailInput.value = this.currentUser.email;
-        if (passInput) passInput.value = '123456';
-      } else if (screenId === 'dashboard') {
-        this.renderDashboard();
-      } else if (screenId === 'new-request') {
-        this.markTestStep('step3');
-        this.resetNewRequestForm();
-      } else if (screenId === 'confirmation') {
-        this.markTestStep('step7');
-        this.renderConfirmationScreen();
-      }
-
-      this.refreshIcons();
-    } catch (e) {
-      console.error("Erro em showScreen:", e);
-    }
-  }
-
-  // ==========================================
-  // Autenticação e Perfis
-  // ==========================================
-  login(userType = 'student') {
-    try {
-      const user = (typeof INITIAL_USERS !== 'undefined') 
-        ? (INITIAL_USERS.find(u => u.role === userType) || INITIAL_USERS[0])
-        : this.currentUser;
-
-      this.currentUser = user;
-      this.markTestStep('step2');
-      this.updateUserUI();
-      this.showScreen('dashboard');
-      this.showToast(`Bem-vindo(a), ${user.name}! Conectado como ${user.roleLabel}.`);
-    } catch (e) {
-      console.error("Erro ao realizar login:", e);
-      this.showScreen('dashboard');
-    }
-  }
-
-  switchUser(userType) {
-    this.login(userType);
-  }
-
-  logout() {
-    this.currentUser = (typeof INITIAL_USERS !== 'undefined') ? INITIAL_USERS[0] : null;
-    this.showScreen('home');
-    this.showToast('Sessão encerrada com sucesso.');
-  }
-
-  updateUserUI() {
-    if (!this.currentUser) return;
-    const isSecretary = this.currentUser.role === 'secretary';
-
-    // Atualiza dados no header e sidebar
-    document.querySelectorAll('.user-name-display').forEach(el => el.textContent = this.currentUser.name);
-    document.querySelectorAll('.user-role-display').forEach(el => el.textContent = this.currentUser.roleLabel);
-    document.querySelectorAll('.user-course-display').forEach(el => el.textContent = this.currentUser.course);
-    document.querySelectorAll('.user-ra-display').forEach(el => el.textContent = this.currentUser.ra);
-    document.querySelectorAll('.user-avatar-display').forEach(el => {
-      if (this.currentUser.avatar) el.src = this.currentUser.avatar;
-    });
-
-    // Ajusta visualização para Secretaria
-    const secretaryBanner = document.getElementById('secretary-banner');
-    if (secretaryBanner) {
-      secretaryBanner.classList.toggle('hidden', !isSecretary);
-    }
-
-    // Alternador de abas no dashboard
-    const studentStats = document.getElementById('student-stats-cards');
-    const secretaryStats = document.getElementById('secretary-stats-cards');
-    if (studentStats && secretaryStats) {
-      if (isSecretary) {
-        studentStats.classList.add('hidden');
-        secretaryStats.classList.remove('hidden');
-      } else {
-        studentStats.classList.remove('hidden');
-        secretaryStats.classList.add('hidden');
-      }
-    }
-  }
-
-  // ==========================================
-  // Dashboard & Métricas
-  // ==========================================
-  renderDashboard() {
-    this.updateUserUI();
-    this.renderMetrics();
-    this.renderRequestsTable();
-    this.renderNotificationsBadge();
-  }
-
-  renderMetrics() {
-    if (!this.currentUser) return;
-    const userRequests = this.currentUser.role === 'secretary' 
-      ? this.requests 
-      : this.requests.filter(r => r.userId === this.currentUser.id);
-
-    const total = userRequests.length;
-    const pending = userRequests.filter(r => r.status === 'pending').length;
-    const inProgress = userRequests.filter(r => r.status === 'in_progress').length;
-    const concluded = userRequests.filter(r => r.status === 'concluded').length;
-
-    const countTotal = document.getElementById('count-total');
-    const countPending = document.getElementById('count-pending');
-    const countInProgress = document.getElementById('count-in-progress');
-    const countConcluded = document.getElementById('count-concluded');
-
-    if (countTotal) countTotal.textContent = total;
-    if (countPending) countPending.textContent = pending;
-    if (countInProgress) countInProgress.textContent = inProgress;
-    if (countConcluded) countConcluded.textContent = concluded;
-
-    // Métricas da secretaria
-    const secTotal = document.getElementById('sec-count-total');
-    const secPending = document.getElementById('sec-count-pending');
-    const secInProgress = document.getElementById('sec-count-in-progress');
-    const secConcluded = document.getElementById('sec-count-concluded');
-
-    if (secTotal) secTotal.textContent = this.requests.length;
-    if (secPending) secPending.textContent = this.requests.filter(r => r.status === 'pending').length;
-    if (secInProgress) secInProgress.textContent = this.requests.filter(r => r.status === 'in_progress').length;
-    if (secConcluded) secConcluded.textContent = this.requests.filter(r => r.status === 'concluded').length;
-  }
-
-  renderRequestsTable() {
-    const tableBody = document.getElementById('requests-table-body');
-    const emptyState = document.getElementById('requests-empty-state');
-    if (!tableBody) return;
-
-    let filtered = (!this.currentUser || this.currentUser.role === 'secretary')
-      ? [...this.requests]
-      : this.requests.filter(r => r.userId === this.currentUser.id);
-
-    // Filtro por Status
-    if (this.currentFilter !== 'all') {
-      filtered = filtered.filter(r => r.status === this.currentFilter);
-    }
-
-    // Filtro por Busca
-    if (this.searchTerm.trim() !== '') {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(r => 
-        (r.id && r.id.toLowerCase().includes(term)) ||
-        (r.serviceTitle && r.serviceTitle.toLowerCase().includes(term)) ||
-        (r.userName && r.userName.toLowerCase().includes(term)) ||
-        (r.description && r.description.toLowerCase().includes(term))
+    } catch {
+      throw new Error(
+        "Não foi possível conectar ao servidor. Confira sua conexão e tente novamente.",
       );
     }
-
-    if (filtered.length === 0) {
-      tableBody.innerHTML = '';
-      if (emptyState) emptyState.classList.remove('hidden');
-      return;
-    }
-
-    if (emptyState) emptyState.classList.add('hidden');
-
-    tableBody.innerHTML = filtered.map(req => {
-      const statusMeta = this.getStatusMeta(req.status);
-      const createdDateFormatted = this.formatDate(req.createdAt);
-      const estimatedDateFormatted = this.formatDate(req.estimatedDate);
-      const isSec = this.currentUser && this.currentUser.role === 'secretary';
-
-      return `
-        <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
-          <td class="py-4 px-4 font-mono font-semibold text-blue-900 text-sm">
-            <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded border border-blue-100">${req.id}</span>
-          </td>
-          <td class="py-4 px-4">
-            <div class="font-medium text-slate-800">${req.serviceTitle}</div>
-            <div class="text-xs text-slate-500">${req.category} • ${req.userName}</div>
-          </td>
-          <td class="py-4 px-4 text-xs text-slate-600">
-            <div>${createdDateFormatted}</div>
-            <div class="text-slate-400 text-[11px]">Prev.: ${estimatedDateFormatted}</div>
-          </td>
-          <td class="py-4 px-4">
-            <span class="status-badge status-badge-${req.status}">
-              <span class="w-1.5 h-1.5 rounded-full ${statusMeta.dotColor}"></span>
-              ${statusMeta.label}
-            </span>
-          </td>
-          <td class="py-4 px-4 text-right">
-            <div class="flex items-center justify-end gap-2">
-              <button onclick="app.openRequestDetails('${req.id}')" 
-                      class="inline-flex items-center gap-1 text-xs font-semibold bg-white text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all shadow-sm">
-                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                Detalhes
-              </button>
-              ${isSec ? `
-                <button onclick="app.openSecretaryActionsModal('${req.id}')" 
-                        class="inline-flex items-center gap-1 text-xs font-semibold bg-blue-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-blue-700 transition-all shadow-sm">
-                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                  Despachar
-                </button>
-              ` : ''}
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    this.refreshIcons();
-  }
-
-  setFilter(filter) {
-    this.currentFilter = filter;
-    document.querySelectorAll('.filter-tab-btn').forEach(btn => {
-      const btnFilter = btn.getAttribute('data-filter');
-      if (btnFilter === filter) {
-        btn.className = "filter-tab-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white shadow-sm transition-all";
-      } else {
-        btn.className = "filter-tab-btn px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition-all";
+    const data = await response.json();
+    if (!response.ok) {
+      if (
+        response.status === 401 &&
+        this.user &&
+        this.user.id === userAtStart
+      ) {
+        this.clearSession();
+        this.header();
       }
-    });
-    this.renderRequestsTable();
-  }
-
-  searchRequests(term) {
-    this.searchTerm = term;
-    this.renderRequestsTable();
-  }
-
-  // ==========================================
-  // Nova Solicitação (Tela 4)
-  // ==========================================
-  renderServicesGrid() {
-    const grid = document.getElementById('services-selection-grid');
-    if (!grid || typeof SERVICE_TYPES === 'undefined') return;
-
-    grid.innerHTML = SERVICE_TYPES.map(service => `
-      <div onclick="app.selectService('${service.id}')" 
-           id="service-card-${service.id}"
-           class="service-card cursor-pointer p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-500 hover:shadow-md transition-all flex flex-col justify-between group">
-        <div>
-          <div class="flex items-start justify-between mb-2">
-            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
-              <i data-lucide="${service.icon}" class="w-5 h-5"></i>
-            </div>
-            ${service.badge ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">${service.badge}</span>` : ''}
-          </div>
-          <h4 class="font-semibold text-slate-800 text-sm mb-1 group-hover:text-blue-700">${service.title}</h4>
-          <p class="text-xs text-slate-500 line-clamp-2">${service.description}</p>
-        </div>
-        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-          <span class="flex items-center gap-1 font-medium text-slate-700">
-            <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i>
-            Prazo: até ${service.slaDays} ${service.slaDays === 1 ? 'dia útil' : 'dias úteis'}
-          </span>
-          <span class="text-blue-600 font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-            Selecionar <i data-lucide="chevron-right" class="w-3 h-3"></i>
-          </span>
-        </div>
-      </div>
-    `).join('');
-
-    this.refreshIcons();
-  }
-
-  selectService(serviceId) {
-    if (typeof SERVICE_TYPES === 'undefined') return;
-    const service = SERVICE_TYPES.find(s => s.id === serviceId);
-    if (!service) return;
-
-    this.selectedService = service;
-    this.markTestStep('step4');
-
-    // Destaca o card selecionado
-    document.querySelectorAll('.service-card').forEach(card => {
-      card.classList.remove('border-blue-600', 'bg-blue-50/40', 'ring-2', 'ring-blue-500/20');
-    });
-    const selectedCard = document.getElementById(`service-card-${serviceId}`);
-    if (selectedCard) {
-      selectedCard.classList.add('border-blue-600', 'bg-blue-50/40', 'ring-2', 'ring-blue-500/20');
+      throw new Error(data.error || "Não foi possível concluir a operação.");
     }
-
-    // Mostra a segunda etapa do formulário
-    const formSection = document.getElementById('new-request-form-section');
-    if (formSection) {
-      formSection.classList.remove('hidden');
-      formSection.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // Preenche dados do serviço no resumo
-    const titleEl = document.getElementById('selected-service-title');
-    const catEl = document.getElementById('selected-service-category');
-    const slaEl = document.getElementById('selected-service-sla');
-    const docsEl = document.getElementById('selected-service-docs');
-
-    if (titleEl) titleEl.textContent = service.title;
-    if (catEl) catEl.textContent = service.category;
-    if (slaEl) slaEl.textContent = `Prazo médio de atendimento: ${service.slaDays} ${service.slaDays === 1 ? 'dia útil' : 'dias úteis'}`;
-    if (docsEl) docsEl.textContent = service.requiredDocs;
-
-    this.refreshIcons();
+    return data;
   }
-
-  handleFileUpload(event) {
-    if (!event.target.files) return;
-    const files = Array.from(event.target.files);
-    files.forEach(file => {
-      const sizeFormatted = file.size > 1024 * 1024 
-        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` 
-        : `${Math.round(file.size / 1024)} KB`;
-
-      this.uploadedFiles.push({
-        name: file.name,
-        size: sizeFormatted
-      });
-    });
-
-    this.renderUploadedFilesList();
-  }
-
-  renderUploadedFilesList() {
-    const listContainer = document.getElementById('uploaded-files-list');
-    if (!listContainer) return;
-
-    if (this.uploadedFiles.length === 0) {
-      listContainer.innerHTML = '';
-      return;
-    }
-
-    listContainer.innerHTML = this.uploadedFiles.map((file, index) => `
-      <div class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-        <div class="flex items-center gap-2 truncate">
-          <i data-lucide="file-check" class="w-4 h-4 text-blue-600 shrink-0"></i>
-          <span class="font-medium text-slate-700 truncate">${file.name}</span>
-          <span class="text-slate-400 shrink-0">(${file.size})</span>
-        </div>
-        <button type="button" onclick="app.removeFile(${index})" class="text-slate-400 hover:text-rose-500 p-1">
-          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-        </button>
-      </div>
-    `).join('');
-
-    this.refreshIcons();
-  }
-
-  removeFile(index) {
-    this.uploadedFiles.splice(index, 1);
-    this.renderUploadedFilesList();
-  }
-
-  resetNewRequestForm() {
+  clearSession() {
+    this.user = null;
+    this.requests = [];
+    this.notifications = [];
+    this.request = null;
     this.selectedService = null;
-    this.uploadedFiles = [];
-    const descField = document.getElementById('request-description');
-    if (descField) descField.value = '';
-    const formSection = document.getElementById('new-request-form-section');
-    if (formSection) formSection.classList.add('hidden');
-    document.querySelectorAll('.service-card').forEach(card => {
-      card.classList.remove('border-blue-600', 'bg-blue-50/40', 'ring-2', 'ring-blue-500/20');
-    });
-    this.renderUploadedFilesList();
   }
-
-  submitRequest(event) {
-    if (event) event.preventDefault();
-
-    if (!this.selectedService) {
-      alert('Por favor, selecione um tipo de serviço antes de enviar.');
-      return;
-    }
-
-    const descField = document.getElementById('request-description');
-    const description = descField ? descField.value.trim() : '';
-    if (!description) {
-      alert('Por favor, descreva detalhadamente a sua solicitação.');
-      return;
-    }
-
-    this.markTestStep('step5');
-    this.markTestStep('step6');
-
-    // Gera ID de Protocolo Único
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const protocolId = `SDASA-2026-${randomNum}`;
-
-    const now = new Date();
-    const estDate = new Date();
-    estDate.setDate(now.getDate() + (this.selectedService.slaDays || 3));
-
-    const user = this.currentUser || {
-      id: "user_mariana",
-      name: "Mariana Oliveira",
-      ra: "2024108842",
-      course: "Análise e Desenvolvimento de Sistemas"
-    };
-
-    const newRequest = {
-      id: protocolId,
-      userId: user.id,
-      userName: user.name,
-      userRa: user.ra,
-      course: user.course,
-      serviceId: this.selectedService.id,
-      serviceTitle: this.selectedService.title,
-      category: this.selectedService.category,
-      createdAt: now.toISOString(),
-      estimatedDate: estDate.toISOString(),
-      status: "pending",
-      urgency: document.getElementById('request-urgency') ? document.getElementById('request-urgency').value : "Normal",
-      description: description,
-      attachments: [...this.uploadedFiles],
-      timeline: [
-        {
-          date: `${this.formatDate(now.toISOString())} às ${this.formatTime(now)}`,
-          title: "Solicitação Aberta",
-          description: "Demanda registrada com sucesso pelo portal do aluno.",
-          actor: `${user.name} (Aluno)`
-        }
-      ],
-      responseNotes: "Aguardando triagem inicial da Secretaria Acadêmica."
-    };
-
-    // Salva no início da lista
-    this.requests.unshift(newRequest);
-    this.saveRequests();
-    this.lastCreatedRequest = newRequest;
-
-    // Adiciona notificação de confirmação
-    this.addNotification({
-      title: "Solicitação Registrada",
-      message: `Sua solicitação ${protocolId} (${newRequest.serviceTitle}) foi enviada com sucesso!`,
-      requestId: protocolId,
-      type: "info"
-    });
-
-    // Direciona para a Tela 5 (Resultado / Confirmação)
-    this.showScreen('confirmation');
-  }
-
-  // ==========================================
-  // Tela de Resultado / Confirmação (Tela 5)
-  // ==========================================
-  renderConfirmationScreen() {
-    const req = this.lastCreatedRequest || this.requests[0];
-    if (!req) return;
-
-    const protoEl = document.getElementById('conf-protocol-id');
-    const titleEl = document.getElementById('conf-service-title');
-    const catEl = document.getElementById('conf-category');
-    const createdEl = document.getElementById('conf-created-at');
-    const estEl = document.getElementById('conf-estimated-date');
-    const studentEl = document.getElementById('conf-student-name');
-    const raEl = document.getElementById('conf-student-ra');
-    const descEl = document.getElementById('conf-description');
-    const attachmentsCount = document.getElementById('conf-attachments-count');
-
-    if (protoEl) protoEl.textContent = req.id;
-    if (titleEl) titleEl.textContent = req.serviceTitle;
-    if (catEl) catEl.textContent = req.category;
-    if (createdEl) createdEl.textContent = `${this.formatDate(req.createdAt)} às ${this.formatTime(new Date(req.createdAt))}`;
-    if (estEl) estEl.textContent = this.formatDate(req.estimatedDate);
-    if (studentEl) studentEl.textContent = req.userName;
-    if (raEl) raEl.textContent = `RA: ${req.userRa}`;
-    if (descEl) descEl.textContent = req.description;
-    
-    if (attachmentsCount) {
-      attachmentsCount.textContent = (req.attachments && req.attachments.length > 0)
-        ? `${req.attachments.length} arquivo(s) anexado(s)` 
-        : 'Nenhum anexo';
-    }
-
-    const printBtn = document.getElementById('btn-print-confirmation');
-    if (printBtn) {
-      printBtn.onclick = () => window.print();
-    }
-  }
-
-  // ==========================================
-  // Modal de Detalhes da Solicitação
-  // ==========================================
-  openRequestDetails(requestId) {
-    const req = this.requests.find(r => r.id === requestId);
-    if (!req) return;
-
-    this.markTestStep('step8');
-
-    const statusMeta = this.getStatusMeta(req.status);
-
-    const idEl = document.getElementById('modal-req-id');
-    const srvEl = document.getElementById('modal-req-service');
-    const catEl = document.getElementById('modal-req-category');
-    const stdEl = document.getElementById('modal-req-student');
-    const crsEl = document.getElementById('modal-req-course');
-    const creEl = document.getElementById('modal-req-created');
-    const estEl = document.getElementById('modal-req-estimated');
-    const urgEl = document.getElementById('modal-req-urgency');
-    const dscEl = document.getElementById('modal-req-desc');
-    const notEl = document.getElementById('modal-req-notes');
-
-    if (idEl) idEl.textContent = req.id;
-    if (srvEl) srvEl.textContent = req.serviceTitle;
-    if (catEl) catEl.textContent = req.category;
-    if (stdEl) stdEl.textContent = `${req.userName} (${req.userRa})`;
-    if (crsEl) crsEl.textContent = req.course;
-    if (creEl) creEl.textContent = this.formatDate(req.createdAt);
-    if (estEl) estEl.textContent = this.formatDate(req.estimatedDate);
-    if (urgEl) urgEl.textContent = req.urgency || "Normal";
-    if (dscEl) dscEl.textContent = req.description;
-    if (notEl) notEl.textContent = req.responseNotes || "Nenhum parecer emitido até o momento.";
-
-    // Status Badge no Modal
-    const badgeEl = document.getElementById('modal-req-status-badge');
-    if (badgeEl) {
-      badgeEl.className = `status-badge status-badge-${req.status}`;
-      badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${statusMeta.dotColor}"></span> ${statusMeta.label}`;
-    }
-
-    // Anexos
-    const attachList = document.getElementById('modal-req-attachments');
-    if (attachList) {
-      if (!req.attachments || req.attachments.length === 0) {
-        attachList.innerHTML = '<span class="text-xs text-slate-400 italic">Nenhum anexo enviado</span>';
-      } else {
-        attachList.innerHTML = req.attachments.map(a => `
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-100 text-slate-700 text-xs border border-slate-200">
-            <i data-lucide="paperclip" class="w-3 h-3 text-blue-600"></i>
-            ${a.name} (${a.size})
-          </span>
-        `).join('');
-      }
-    }
-
-    // Linha do Tempo (Timeline)
-    const timelineContainer = document.getElementById('modal-req-timeline');
-    if (timelineContainer) {
-      timelineContainer.innerHTML = (req.timeline || []).map((t, index, arr) => `
-        <div class="relative pl-6 pb-4 ${index !== arr.length - 1 ? 'border-l-2 border-blue-200' : ''}">
-          <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-600 border-2 border-white shadow-sm flex items-center justify-center">
-            <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
-          </div>
-          <div class="text-[11px] font-semibold text-blue-700 mb-0.5">${t.date}</div>
-          <div class="text-xs font-bold text-slate-800">${t.title}</div>
-          <div class="text-xs text-slate-600 mt-0.5">${t.description}</div>
-          <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-            <i data-lucide="user" class="w-2.5 h-2.5"></i> ${t.actor}
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // Exibe o modal
-    const modal = document.getElementById('request-details-modal');
-    if (modal) modal.classList.remove('hidden');
-
-    this.refreshIcons();
-  }
-
-  closeRequestDetails() {
-    const modal = document.getElementById('request-details-modal');
-    if (modal) modal.classList.add('hidden');
-  }
-
-  // ==========================================
-  // Despacho da Secretaria (Simulação de Gestão)
-  // ==========================================
-  openSecretaryActionsModal(requestId) {
-    const req = this.requests.find(r => r.id === requestId);
-    if (!req) return;
-
-    const idEl = document.getElementById('sec-modal-req-id');
-    const titleEl = document.getElementById('sec-modal-req-title');
-    const statusSelect = document.getElementById('sec-status-select');
-    const notesInput = document.getElementById('sec-notes-input');
-
-    if (idEl) idEl.textContent = req.id;
-    if (titleEl) titleEl.textContent = `${req.serviceTitle} - ${req.userName}`;
-    if (statusSelect) statusSelect.value = req.status;
-    if (notesInput) notesInput.value = req.responseNotes || '';
-
-    const modal = document.getElementById('secretary-action-modal');
-    if (modal) {
-      modal.setAttribute('data-target-request-id', requestId);
-      modal.classList.remove('hidden');
-    }
-  }
-
-  closeSecretaryActionsModal() {
-    const modal = document.getElementById('secretary-action-modal');
-    if (modal) modal.classList.add('hidden');
-  }
-
-  saveSecretaryAction() {
-    const modal = document.getElementById('secretary-action-modal');
-    if (!modal) return;
-    const requestId = modal.getAttribute('data-target-request-id');
-    const req = this.requests.find(r => r.id === requestId);
-    if (!req) return;
-
-    const newStatus = document.getElementById('sec-status-select').value;
-    const notes = document.getElementById('sec-notes-input').value.trim();
-
-    req.status = newStatus;
-    req.responseNotes = notes;
-
-    const now = new Date();
-    const statusMeta = this.getStatusMeta(newStatus);
-
-    if (!req.timeline) req.timeline = [];
-    req.timeline.push({
-      date: `${this.formatDate(now.toISOString())} às ${this.formatTime(now)}`,
-      title: `Status alterado para ${statusMeta.label}`,
-      description: notes || `Parecer administrativo emitido pela Secretaria Acadêmica.`,
-      actor: `${this.currentUser ? this.currentUser.name : 'Secretaria'} (Secretaria)`
-    });
-
-    this.saveRequests();
-
-    // Notifica o Aluno
-    this.addNotification({
-      title: `Solicitação Atualizada (${req.id})`,
-      message: `A secretaria alterou o status para "${statusMeta.label}". Parecer: "${notes || 'Sem observações adicionais'}"`,
-      requestId: req.id,
-      type: newStatus === 'concluded' ? 'success' : (newStatus === 'rejected' ? 'danger' : 'info')
-    });
-
-    this.closeSecretaryActionsModal();
-    this.renderDashboard();
-    this.showToast(`Solicitação ${req.id} despachada com sucesso!`);
-  }
-
-  // ==========================================
-  // Notificações
-  // ==========================================
-  addNotification(notif) {
-    const newNotif = {
-      id: `notif_${Date.now()}`,
-      title: notif.title,
-      message: notif.message,
-      time: 'Agora mesmo',
-      read: false,
-      requestId: notif.requestId || null,
-      type: notif.type || 'info'
-    };
-    this.notifications.unshift(newNotif);
-    this.saveNotifications();
-    this.renderNotificationsBadge();
-  }
-
-  toggleNotificationsModal() {
-    const modal = document.getElementById('notifications-modal');
-    if (!modal) return;
-
-    const isHidden = modal.classList.contains('hidden');
-    if (isHidden) {
-      this.renderNotificationsList();
-      modal.classList.remove('hidden');
-    } else {
-      modal.classList.add('hidden');
-    }
-  }
-
-  renderNotificationsList() {
-    const list = document.getElementById('notifications-list-container');
-    if (!list) return;
-
-    if (this.notifications.length === 0) {
-      list.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">Nenhuma notificação recente.</div>';
-      return;
-    }
-
-    list.innerHTML = this.notifications.map(n => `
-      <div class="p-3.5 border-b border-slate-100 hover:bg-slate-50 transition-colors flex items-start gap-3 ${!n.read ? 'bg-blue-50/50' : ''}">
-        <div class="w-8 h-8 rounded-full ${n.type === 'success' ? 'bg-emerald-100 text-emerald-600' : (n.type === 'danger' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600')} flex items-center justify-center shrink-0 mt-0.5">
-          <i data-lucide="${n.type === 'success' ? 'check-circle' : (n.type === 'danger' ? 'alert-circle' : 'bell')}" class="w-4 h-4"></i>
-        </div>
-        <div class="flex-1">
-          <div class="flex items-center justify-between gap-2">
-            <h5 class="text-xs font-bold text-slate-800">${n.title}</h5>
-            <span class="text-[10px] text-slate-400 shrink-0">${n.time}</span>
-          </div>
-          <p class="text-xs text-slate-600 mt-1">${n.message}</p>
-          ${n.requestId ? `
-            <button onclick="app.toggleNotificationsModal(); app.openRequestDetails('${n.requestId}')" class="text-[11px] font-semibold text-blue-600 hover:underline mt-1.5 inline-flex items-center gap-1">
-              Ver solicitação <i data-lucide="arrow-right" class="w-2.5 h-2.5"></i>
-            </button>
-          ` : ''}
-        </div>
-      </div>
-    `).join('');
-
-    // Marca todas como lidas
-    this.notifications.forEach(n => n.read = true);
-    this.saveNotifications();
-    this.renderNotificationsBadge();
-
-    this.refreshIcons();
-  }
-
-  renderNotificationsBadge() {
-    const unreadCount = this.notifications.filter(n => !n.read).length;
-    const badge = document.getElementById('notif-badge-count');
-    if (badge) {
-      if (unreadCount > 0) {
-        badge.textContent = unreadCount;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
-    }
-  }
-
-  // ==========================================
-  // Guia de Teste de Usabilidade (Item 5.5)
-  // ==========================================
-  markTestStep(stepKey) {
-    if (this.testChecklist[stepKey] !== undefined) {
-      this.testChecklist[stepKey] = true;
-      this.updateUsabilityGuide();
-    }
-  }
-
-  updateUsabilityGuide() {
+  async init() {
     try {
-      const completedCount = Object.values(this.testChecklist).filter(Boolean).length;
-      const totalCount = Object.keys(this.testChecklist).length;
-      const percent = Math.round((completedCount / totalCount) * 100);
-
-      const progressEl = document.getElementById('usability-progress-bar');
-      const textEl = document.getElementById('usability-progress-text');
-      if (progressEl) progressEl.style.width = `${percent}%`;
-      if (textEl) textEl.textContent = `${completedCount}/${totalCount} (${percent}%)`;
-
-      const stepTitles = {
-        step1: "1. Acessar a tela inicial",
-        step2: "2. Realizar o login",
-        step3: "3. Localizar Nova solicitação",
-        step4: "4. Selecionar o tipo de atendimento",
-        step5: "5. Preencher a descrição",
-        step6: "6. Enviar a solicitação",
-        step7: "7. Identificar o protocolo gerado",
-        step8: "8. Verificar o status"
-      };
-
-      // Atualiza os passos de forma 100% segura sem depender de transformações do DOM
-      for (const key in this.testChecklist) {
-        const itemEl = document.getElementById(`guide-${key}`);
-        if (itemEl) {
-          const isDone = this.testChecklist[key];
-          if (isDone) {
-            itemEl.className = "flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded transition-colors";
-            itemEl.innerHTML = `
-              <span class="text-emerald-600 font-bold shrink-0">✓</span>
-              <span>${stepTitles[key]}</span>
-            `;
-          } else {
-            itemEl.className = "flex items-center gap-2 text-xs text-slate-500 px-2 py-1 rounded";
-            itemEl.innerHTML = `
-              <span class="text-slate-300 font-bold shrink-0">○</span>
-              <span>${stepTitles[key]}</span>
-            `;
-          }
+      this.services = await this.api("/services");
+      try {
+        this.user = await this.api("/me");
+      } catch {
+        this.user = null;
+      }
+      await this.go(
+        this.resetToken ? "reset" : this.user ? "dashboard" : "home",
+      );
+      this.initializing = false;
+      setInterval(() => this.refreshNotifications(), 30000);
+    } catch (error) {
+      $("#main").innerHTML =
+        `<div class="panel"><h1>Não foi possível iniciar</h1><p class="error">${escape(error.message)}</p><button data-action="reload">Tentar novamente</button></div>`;
+    }
+  }
+  toast(message) {
+    $("#toast").textContent = message;
+    $("#toast").hidden = false;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => {
+      $("#toast").hidden = true;
+    }, 5000);
+  }
+  async refreshNotifications() {
+    if (!this.user) return;
+    const userId = this.user.id;
+    try {
+      const notifications = await this.api("/notifications");
+      if (this.user?.id === userId) {
+        this.notifications = notifications;
+        const count = notifications.filter((n) => !n.read).length;
+        const indicator = $("#notification-count");
+        if (indicator) {
+          indicator.textContent = String(count);
+          indicator.hidden = count === 0;
         }
       }
-    } catch (e) {
-      console.error("Erro em updateUsabilityGuide:", e);
+    } catch {
+      /* Next user action reports the network failure. */
     }
   }
-
-  toggleUsabilityDrawer() {
-    const drawer = document.getElementById('usability-drawer-content');
-    const icon = document.getElementById('usability-toggle-icon');
-    if (drawer) {
-      drawer.classList.toggle('hidden');
-      if (icon) {
-        icon.classList.toggle('rotate-180');
+  header() {
+    const count = this.notifications.filter((n) => !n.read).length;
+    const navigation = this.user
+      ? [
+          ["dashboard", "Solicitações"],
+          ...(this.user.role === "student"
+            ? [["new", "Nova solicitação"]]
+            : []),
+          ["notifications", "Notificações"],
+          ...(["secretary", "manager", "admin"].includes(this.user.role)
+            ? [["reports", "Indicadores"]]
+            : []),
+          ...(this.user.role === "admin" ? [["admin", "Administração"]] : []),
+        ]
+      : [];
+    $("#header").innerHTML =
+      `<div class="header-inner"><a class="brand" href="/" data-screen="home"><span class="brand-icon" aria-hidden="true">S</span><span>SDASA<small>Atendimento e solicitações acadêmicas</small></span></a><div class="header-user">${this.user ? `<div><strong>${escape(this.user.name)}</strong><small>${escape(ROLES[this.user.role])}</small></div><button data-action="logout" class="small">Sair</button>` : '<button data-screen="login" class="small">Entrar</button><button data-screen="register" class="primary small">Criar conta</button>'}</div></div>${navigation.length ? `<nav aria-label="Navegação principal">${navigation.map(([screen, label]) => `<button data-screen="${screen}" class="${this.screen === screen ? "active" : "quiet"}" ${this.screen === screen ? 'aria-current="page"' : ""}>${label}${screen === "notifications" ? ` <span id="notification-count" class="unread-count" ${count ? "" : "hidden"}>${count}</span>` : ""}</button>`).join("")}</nav>` : ""}`;
+  }
+  async go(screen, id) {
+    $("#toast").hidden = true;
+    clearTimeout(this.toastTimer);
+    if (
+      !this.user &&
+      !["home", "login", "register", "forgot", "reset"].includes(screen)
+    )
+      screen = "login";
+    const version = ++this.viewVersion;
+    this.screen = screen;
+    this.header();
+    $("#main").innerHTML = '<p class="loading" role="status">Carregando…</p>';
+    try {
+      let html;
+      if (screen === "home") html = this.home();
+      else if (["login", "register", "forgot", "reset"].includes(screen))
+        html = this.auth(screen);
+      else if (screen === "dashboard") {
+        this.requests = await this.api("/requests");
+        html = this.dashboard();
+      } else if (screen === "new") {
+        this.services = await this.api("/services");
+        this.selectedService = id || null;
+        html = this.newRequest();
+      } else if (screen === "detail" || screen === "confirmation") {
+        this.request = await this.api(`/requests/${id}`);
+        if (["secretary", "admin"].includes(this.user.role))
+          this.staff = await this.api("/staff");
+        html = screen === "detail" ? this.detail() : this.confirmation();
+      } else if (screen === "notifications") {
+        this.notifications = await this.api("/notifications");
+        html = this.notificationView();
+      } else if (screen === "reports") {
+        html = this.reportView(await this.fetchReport());
+      } else if (screen === "admin") {
+        [
+          this.adminServices,
+          this.users,
+          this.holidays,
+          this.metrics,
+          this.audit,
+        ] = await Promise.all(
+          [
+            "/admin/services",
+            "/admin/users",
+            "/admin/holidays",
+            "/admin/metrics",
+            "/admin/audit",
+          ].map((p) => this.api(p)),
+        );
+        html = this.admin();
       }
+      if (version !== this.viewVersion) return;
+      $("#main").innerHTML = html || this.home();
+      this.header();
+      if (!this.initializing) $("#main").focus();
+      if (this.user) this.refreshNotifications();
+    } catch (error) {
+      if (version === this.viewVersion)
+        $("#main").innerHTML =
+          `<div class="panel"><h1>Não foi possível carregar</h1><p class="error" role="alert">${escape(error.message)}</p><button data-screen="${this.user ? "dashboard" : "login"}">${this.user ? "Voltar às solicitações" : "Entrar"}</button></div>`;
     }
   }
-
-  // ==========================================
-  // Utilitários & Eventos
-  // ==========================================
-  getStatusMeta(status) {
-    switch (status) {
-      case 'pending':
-        return { label: 'Aguardando Triagem', dotColor: 'bg-amber-500' };
-      case 'in_progress':
-        return { label: 'Em Análise / Tramitação', dotColor: 'bg-sky-500' };
-      case 'concluded':
-        return { label: 'Concluído / Deferido', dotColor: 'bg-emerald-500' };
-      case 'rejected':
-        return { label: 'Indeferido / Cancelado', dotColor: 'bg-rose-500' };
-      default:
-        return { label: 'Status Desconhecido', dotColor: 'bg-slate-400' };
+  home() {
+    return `<section class="hero"><div class="eyebrow">Sua vida acadêmica, mais simples</div><h1>Seu atendimento acadêmico em um só lugar.</h1><p>Abra solicitações, envie documentos e acompanhe cada etapa. Mais clareza sobre prazos e uma conversa direta com a instituição.</p><button data-screen="${this.user ? "dashboard" : "login"}" class="button primary">${this.user ? "Acessar meu painel" : "Entrar no portal"}</button>${this.user ? "" : '<button data-screen="register" class="button secondary">Criar minha conta</button>'}</section><div class="grid"><section class="card"><h2>Acompanhe pelo protocolo</h2><p>Consulte o status e o histórico de cada pedido, sempre que precisar.</p></section><section class="card"><h2>Conheça os prazos</h2><p>Veja o prazo em dias úteis antes de enviar sua solicitação.</p></section><section class="card"><h2>Converse com a instituição</h2><p>Mensagens e documentos ficam organizados junto ao atendimento.</p></section></div><section class="panel"><h2>Serviços disponíveis</h2><div class="grid">${this.services.map((s) => `<article class="service"><h3>${escape(s.title)}</h3><p>${escape(s.description)}</p><small>Até ${slaLabel(s.slaDays)}</small></article>`).join("")}</div></section>`;
+  }
+  auth(screen) {
+    const title = {
+      login: "Bem-vindo de volta",
+      register: "Crie sua conta",
+      forgot: "Recuperar acesso",
+      reset: "Defina sua nova senha",
+    }[screen];
+    return `<section class="panel auth"><div class="eyebrow">Portal acadêmico</div><h1>${title}</h1><p class="muted">${screen === "register" ? "O cadastro cria um perfil de aluno. A instituição administra os demais acessos." : "Acesse suas solicitações com segurança."}</p><form data-form="${screen}">${screen === "register" ? '<label>Nome completo<input name="name" autocomplete="name" required maxlength="100"></label><label>RA<input name="ra" maxlength="50"></label><label>Curso<input name="course" maxlength="150"></label>' : ""}${screen !== "reset" ? '<label>E-mail<input name="email" type="email" autocomplete="username" required maxlength="254"></label>' : ""}${screen !== "forgot" ? `<label>Senha<input name="password" type="password" autocomplete="${screen === "login" ? "current-password" : "new-password"}" required minlength="12" maxlength="128" aria-describedby="password-help"></label><p id="password-help" class="hint">Use pelo menos 12 caracteres.</p>` : ""}${errorSlot}<button class="primary" type="submit">${{ login: "Entrar", register: "Criar conta", forgot: "Enviar instruções", reset: "Salvar nova senha" }[screen]}</button></form><div class="actions">${screen === "login" ? '<button class="quiet small" data-screen="forgot">Esqueci minha senha</button><button class="quiet small" data-screen="register">Criar conta</button>' : '<button class="quiet small" data-screen="login">Voltar para o login</button>'}</div></section>`;
+  }
+  dashboard() {
+    const filtered = this.requests.filter(
+      (r) =>
+        (!this.filter.status || r.status === this.filter.status) &&
+        (!this.filter.overdue || isOverdue(r)) &&
+        `${r.id} ${r.serviceTitle} ${r.userName}`
+          .toLowerCase()
+          .includes(this.filter.search.toLowerCase()),
+    );
+    const metrics = [
+      ["Solicitações", this.requests.length],
+      [
+        "Aguardando triagem",
+        this.requests.filter((r) => r.status === "pending").length,
+      ],
+      [
+        "Em análise",
+        this.requests.filter((r) => r.status === "in_progress").length,
+      ],
+      ["Em atraso", this.requests.filter((r) => isOverdue(r)).length],
+    ];
+    return `<div class="toolbar"><div><div class="eyebrow">${escape(ROLES[this.user.role])}</div><h1>${this.user.role === "student" ? "Minhas solicitações" : "Central de atendimento"}</h1><p class="muted">Acompanhe demandas, prazos e próximos passos.</p></div><div class="actions"><button data-screen="dashboard">Atualizar</button>${this.user.role === "student" ? '<button data-screen="new" class="primary">+ Nova solicitação</button>' : ""}</div></div>${this.user.role === "manager" ? '<p class="note">Seu perfil consulta resultados consolidados na aba Indicadores.</p>' : ""}<div class="stats">${metrics.map(([label, number]) => `<div class="stat"><span>${label}</span><strong>${number}</strong></div>`).join("")}</div><section class="panel"><form class="filters" data-form="filters"><label>Buscar<input name="search" value="${escape(this.filter.search)}" placeholder="Protocolo, serviço ou nome"></label><label>Status<select name="status"><option value="">Todos</option>${Object.entries(
+      STATUSES,
+    )
+      .map(
+        ([id, title]) =>
+          `<option value="${id}" ${this.filter.status === id ? "selected" : ""}>${title}</option>`,
+      )
+      .join(
+        "",
+      )}</select></label><label class="check"><input type="checkbox" name="overdue" ${this.filter.overdue ? "checked" : ""}>Somente atrasadas</label><button type="submit">Filtrar</button></form><div class="table-wrap"><table><thead><tr><th>Protocolo / Serviço</th><th>Solicitante</th><th>Prazo</th><th>Status</th><th>Ação</th></tr></thead><tbody>${filtered.map((r) => `<tr><td><span class="protocol">${escape(r.id)}</span><small>${escape(r.serviceTitle)}</small></td><td>${escape(r.userName)}</td><td>${date(r.estimatedDate)}${isOverdue(r) ? '<small><span class="badge overdue">Prazo vencido</span></small>' : ""}</td><td>${badge(r.status)}</td><td><button class="small" data-screen="detail" data-id="${escape(r.id)}">Detalhes</button></td></tr>`).join("")}</tbody></table>${filtered.length ? "" : '<p class="empty">Nenhuma solicitação encontrada.</p>'}</div></section>`;
+  }
+  newRequest() {
+    if (this.user.role !== "student")
+      return '<p class="error">A abertura de solicitações é exclusiva para alunos.</p>';
+    const service = this.services.find((s) => s.id === this.selectedService);
+    return `<h1>Nova solicitação</h1><p class="muted">Escolha o serviço e confira os documentos necessários.</p><div class="grid">${this.services.map((s) => `<article class="card service ${s.id === this.selectedService ? "selected-service" : ""}"><div class="eyebrow">${escape(s.category)}</div><h2>${escape(s.title)}</h2><p>${escape(s.description)}</p><small>Prazo: até ${slaLabel(s.slaDays)}</small><button data-action="select-service" data-id="${escape(s.id)}" aria-pressed="${s.id === this.selectedService}">${s.id === this.selectedService ? "Selecionado" : "Selecionar"}</button></article>`).join("")}</div>${service ? `<section class="panel" id="request-form"><h2>${escape(service.title)}</h2><p class="note">${escape(service.requiredDocs || "Nenhum documento adicional obrigatório.")}</p><form data-form="new-request"><label>Descreva sua solicitação<textarea name="description" required maxlength="5000" rows="5"></textarea></label>${fileInput}${service.attachmentRequired ? '<p class="hint">É obrigatório anexar pelo menos um documento.</p>' : ""}${errorSlot}<div class="actions"><button type="submit" class="primary">Enviar solicitação</button><button type="button" data-screen="dashboard">Cancelar</button></div></form></section>` : ""}`;
+  }
+  confirmation() {
+    const r = this.request;
+    return `<section class="panel receipt"><div class="success no-print">Solicitação registrada com sucesso.</div><div class="eyebrow">Comprovante de solicitação · SDASA</div><h1>${escape(r.serviceTitle)}</h1><p class="protocol">${escape(r.id)}</p><dl><div><dt>Solicitante</dt><dd>${escape(r.userName)}</dd></div><div><dt>Data de abertura</dt><dd>${date(r.createdAt)}</dd></div><div><dt>Status atual</dt><dd>${escape(STATUSES[r.status])}</dd></div><div><dt>Previsão de atendimento</dt><dd>${date(r.estimatedDate)}</dd></div></dl><p class="detail-text">${escape(r.description)}</p><p class="hint">Este comprovante registra o envio da solicitação; não substitui o documento acadêmico solicitado.</p><div class="actions no-print"><button class="primary" data-screen="detail" data-id="${escape(r.id)}">Acompanhar solicitação</button><button data-action="print">Imprimir comprovante</button></div></section>`;
+  }
+  detail() {
+    const r = this.request,
+      staff = ["secretary", "admin"].includes(this.user.role),
+      closed = ["concluded", "rejected"].includes(r.status);
+    const transitions = TRANSITIONS[r.status].filter((next) =>
+      canTransition(this.user, r, next),
+    );
+    return `<div class="toolbar"><div><button class="quiet small" data-screen="dashboard">← Voltar às solicitações</button><h1>${escape(r.serviceTitle)}</h1><span class="protocol">${escape(r.id)}</span> ${badge(r.status)}</div><div class="actions"><button data-screen="detail" data-id="${escape(r.id)}">Atualizar</button><button data-screen="confirmation" data-id="${escape(r.id)}">Comprovante</button></div></div><div class="split"><div><section class="panel"><h2>Dados da solicitação</h2><p><strong>${escape(r.userName)}</strong> · ${escape(r.userRa || "RA não informado")}</p><p class="muted">Abertura: ${date(r.createdAt)}<br>Prazo: ${date(r.estimatedDate)} ${isOverdue(r) ? '<span class="badge overdue">Prazo vencido</span>' : ""}</p><p class="detail-text">${escape(r.description)}</p><h3>Documentos</h3><ul class="file-list">${r.attachments.map((f) => `<li><a href="/api/attachments/${escape(f.id)}" download>${escape(f.name)}</a> <span class="hint">(${Math.ceil(f.size / 1024)} KB)</span></li>`).join("") || '<li class="muted">Nenhum documento anexado.</li>'}</ul></section><section class="panel"><h2>Conversa do atendimento</h2>${r.messages.map((m) => `<article class="message"><strong>${escape(m.author)}</strong><small>${date(m.created_at)}</small><p class="detail-text">${escape(m.body)}</p></article>`).join("") || '<p class="muted">Ainda não há mensagens.</p>'}${closed ? '<p class="hint">Atendimento encerrado. A conversa permanece disponível para consulta.</p>' : `<form data-form="message"><label>Nova mensagem<textarea name="body" required maxlength="5000"></textarea></label>${errorSlot}<button type="submit" class="primary">Enviar mensagem</button></form>`}</section></div><div>${staff && !closed ? `<section class="panel"><h2>Responsável pelo atendimento</h2><form data-form="assign"><label>Encaminhar para<select name="assigneeId"><option value="">Sem responsável</option>${(this.staff || []).map((u) => `<option value="${escape(u.id)}" ${r.assigneeId === u.id ? "selected" : ""}>${escape(u.name)} (${escape(ROLES[u.role])})</option>`).join("")}</select></label>${errorSlot}<button type="submit">Salvar encaminhamento</button></form></section>` : ""}${transitions.length ? `<section class="panel"><h2>${this.user.role === "student" ? "Enviar complementação" : "Atualizar atendimento"}</h2><form data-form="status"><label>Próximo status<select name="status">${transitions.map((s) => `<option value="${s}">${STATUSES[s]}</option>`).join("")}</select></label><label>${this.user.role === "student" ? "Complementação" : "Parecer"}<textarea name="notes" required maxlength="5000"></textarea></label>${fileInput}${errorSlot}<button type="submit" class="primary">Salvar atualização</button></form></section>` : ""}<section class="panel"><h2>Histórico de atendimento</h2><ol class="timeline">${r.timeline
+      .map(
+        (e) =>
+          `<li><strong>${escape(e.title)}</strong><small>${date(e.created_at)} · ${escape(e.actor)}</small><p class="detail-text">${escape(e.description)}</p></li>`,
+      )
+      .reverse()
+      .join("")}</ol></section></div></div>`;
+  }
+  notificationView() {
+    return `<div class="toolbar"><h1>Notificações</h1><button data-action="read-notifications">Marcar como lidas</button></div><section class="panel">${this.notifications.map((n) => `<article class="notification ${n.read ? "" : "unread"}"><p>${escape(n.message)}</p><small>${date(n.createdAt)} · ${escape(n.requestId)}</small><button class="quiet small" data-screen="detail" data-id="${escape(n.requestId)}">Ver solicitação</button></article>`).join("") || '<p class="empty">Nenhuma notificação por enquanto.</p>'}</section>`;
+  }
+  async fetchReport() {
+    const today = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "America/Sao_Paulo",
+    }).format(new Date());
+    this.period ||= { from: `${today.slice(0, 7)}-01`, to: today };
+    return this.api(`/reports?from=${this.period.from}&to=${this.period.to}`);
+  }
+  reportView(r) {
+    const metrics = [
+      ["Solicitações abertas", r.total],
+      ["Concluídas", r.concluded],
+      ["Em atraso", r.overdue],
+      ["Aguardando aluno", r.awaitingStudent],
+      ["Prazo cumprido", r.slaPercent === null ? "—" : `${r.slaPercent}%`],
+      [
+        "Tempo médio até encerramento",
+        r.averageHours === null ? "—" : `${r.averageHours} h`,
+      ],
+    ];
+    return `<h1>Indicadores de atendimento</h1><p class="muted">Dados das solicitações abertas no período selecionado.</p><section class="panel"><form class="filters" data-form="report"><label>De<input name="from" type="date" value="${this.period.from}" required></label><label>Até<input name="to" type="date" value="${this.period.to}" required></label><button type="submit">Consultar</button>${errorSlot}</form></section><div class="stats">${metrics.map(([label, value]) => `<div class="stat"><span>${label}</span><strong>${value}</strong></div>`).join("")}</div><p class="hint">Prazo cumprido e tempo médio consideram atendimentos encerrados, incluindo indeferimentos. O prazo continua contando durante a complementação.</p><section class="panel"><h2>Volume por serviço</h2><table><thead><tr><th>Serviço</th><th>Solicitações</th></tr></thead><tbody>${r.byService.map((s) => `<tr><td>${escape(s.title)}</td><td>${s.count}</td></tr>`).join("")}</tbody></table>${r.total ? "" : '<p class="empty">Sem registros neste período.</p>'}</section>`;
+  }
+  serviceForm(s = {}) {
+    return `<form data-form="service" data-id="${escape(s.id || "")}"><label>Nome do serviço<input name="title" value="${escape(s.title || "")}" required maxlength="120"></label><label>Categoria<input name="category" value="${escape(s.category || "")}" required maxlength="80"></label><label>Descrição<textarea name="description" required maxlength="1000">${escape(s.description || "")}</textarea></label><label>Prazo em dias úteis<input name="slaDays" type="number" min="1" max="365" value="${s.slaDays || 1}" required></label><label>Documentos necessários<textarea name="requiredDocs" maxlength="1000">${escape(s.requiredDocs || "")}</textarea></label><label class="check"><input type="checkbox" name="attachmentRequired" ${s.attachmentRequired ? "checked" : ""}>Exigir anexo</label><label class="check"><input type="checkbox" name="active" ${s.active !== false ? "checked" : ""}>Serviço ativo</label>${errorSlot}<button type="submit" class="primary">Salvar serviço</button></form>`;
+  }
+  admin() {
+    return `<h1>Administração</h1><p class="muted">Gerencie acessos, serviços e calendário institucional.</p><section class="panel"><h2>Usuários e perfis</h2>${this.users
+      .map(
+        (u) =>
+          `<form data-form="user" data-id="${escape(u.id)}" class="admin-user"><div><strong>${escape(u.name)}</strong><small class="hint break"> ${escape(u.email)}</small></div><label><span class="hint">Perfil</span><select name="role" ${u.id === this.user.id ? "disabled" : ""}>${Object.entries(
+            ROLES,
+          )
+            .map(
+              ([id, name]) =>
+                `<option value="${id}" ${u.role === id ? "selected" : ""}>${name}</option>`,
+            )
+            .join(
+              "",
+            )}</select></label><label class="check"><input name="active" type="checkbox" ${u.active ? "checked" : ""} ${u.id === this.user.id ? "disabled" : ""}>Ativo</label><button type="submit" ${u.id === this.user.id ? "disabled" : ""}>Salvar</button>${errorSlot}</form>`,
+      )
+      .join(
+        "",
+      )}</section><div class="split"><section class="panel"><h2>Catálogo de serviços</h2><details><summary>+ Adicionar serviço</summary>${this.serviceForm()}</details>${this.adminServices.map((s) => `<details><summary>${escape(s.title)} ${s.active ? "" : "(inativo)"}</summary>${this.serviceForm(s)}</details>`).join("")}</section><div><section class="panel"><h2>Feriados e dias sem expediente</h2><p class="hint">Uma data por linha, no formato AAAA-MM-DD. Alterações valem para novos pedidos; prazos já registrados são preservados.</p><form data-form="holidays"><label>Datas<textarea name="holidays" rows="7">${escape(this.holidays.join("\n"))}</textarea></label>${errorSlot}<button type="submit">Salvar calendário</button></form></section><section class="panel"><h2>Operação</h2><p>Requisições: ${this.metrics.requests}<br>Erros do servidor: ${this.metrics.errors}<br>Tempo médio: ${this.metrics.averageMs} ms<br>Banco: ${(this.metrics.databaseBytes / 1024 / 1024).toFixed(2)} MB<br>Memória: ${(this.metrics.memoryBytes / 1024 / 1024).toFixed(1)} MB</p><p class="hint">Métricas do processo desde ${date(this.metrics.startedAt)}.</p></section></div></div><section class="panel"><h2>Últimas alterações administrativas</h2>${this.audit.map((a) => `<p>${date(a.created_at)} · ${escape(a.actor)} · ${escape(a.action)}</p>`).join("") || '<p class="muted">Nenhuma alteração registrada.</p>'}</section>`;
+  }
+  async attachments(form) {
+    const files = Array.from(form.elements.attachments?.files || []);
+    if (files.length > MAX_FILES)
+      throw new Error("Selecione no máximo 5 arquivos por envio.");
+    return Promise.all(
+      files.map(async (f) => {
+        validateAttachment(f);
+        const content = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = () =>
+            reject(new Error("Não foi possível ler o arquivo."));
+          reader.readAsDataURL(f);
+        });
+        return { name: f.name, type: f.type, content };
+      }),
+    );
+  }
+  async click(event) {
+    const target = event.target.closest("[data-screen], [data-action]");
+    if (!target) return;
+    event.preventDefault();
+    try {
+      if (target.dataset.screen) {
+        await this.go(target.dataset.screen, target.dataset.id);
+        return;
+      }
+      switch (target.dataset.action) {
+        case "reload":
+          location.reload();
+          break;
+        case "logout":
+          await this.api("/auth/logout", "POST", {});
+          this.clearSession();
+          await this.go("home");
+          break;
+        case "print":
+          window.print();
+          break;
+        case "select-service":
+          this.selectedService = target.dataset.id;
+          $("#main").innerHTML = this.newRequest();
+          $("#request-form").scrollIntoView({ behavior: "smooth" });
+          $("#request-form textarea").focus();
+          break;
+        case "read-notifications":
+          await this.api("/notifications/read", "POST", {
+            ids: this.notifications
+              .filter((n) => !n.read)
+              .slice(0, 500)
+              .map((n) => n.id),
+          });
+          await this.go("notifications");
+          break;
+      }
+    } catch (error) {
+      this.toast(error.message);
     }
   }
-
-  formatDate(isoString) {
-    if (!isoString) return '--/--/----';
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return '--/--/----';
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  }
-
-  formatTime(dateObj) {
-    if (!dateObj || isNaN(dateObj.getTime())) return '--:--';
-    const hours = String(dateObj.getHours()).padStart(2, '0');
-    const mins = String(dateObj.getMinutes()).padStart(2, '0');
-    return `${hours}:${mins}`;
-  }
-
-  showToast(message) {
-    const toast = document.getElementById('app-toast');
-    const toastMsg = document.getElementById('toast-message');
-    if (toast && toastMsg) {
-      toastMsg.textContent = message;
-      toast.classList.remove('translate-y-20', 'opacity-0');
-      toast.classList.add('translate-y-0', 'opacity-100');
-      setTimeout(() => {
-        toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('translate-y-20', 'opacity-0');
-      }, 3500);
-    }
-  }
-
-  setupEventListeners() {
-    // Intercepta formulário de login
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-      loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.login('student');
-      });
-    }
-
-    // Intercepta formulário de nova solicitação
-    const requestForm = document.getElementById('new-request-form');
-    if (requestForm) {
-      requestForm.addEventListener('submit', (e) => this.submitRequest(e));
-    }
-
-    // Upload de arquivo
-    const fileInput = document.getElementById('file-upload-input');
-    if (fileInput) {
-      fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-    }
-
-    // Busca rápida
-    const searchInput = document.getElementById('table-search-input');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => this.searchRequests(e.target.value));
+  async submit(event) {
+    const form = event.target.closest("[data-form]");
+    if (!form) return;
+    event.preventDefault();
+    if (form.dataset.busy) return;
+    const button = form.querySelector('button[type="submit"]');
+    const error = form.querySelector(".form-error");
+    if (error) error.textContent = "";
+    if (button) button.disabled = true;
+    form.dataset.busy = "true";
+    const input = Object.fromEntries(new FormData(form));
+    try {
+      switch (form.dataset.form) {
+        case "login":
+          this.user = (await this.api("/auth/login", "POST", input)).user;
+          this.filter = { search: "", status: "", overdue: false };
+          await this.go("dashboard");
+          break;
+        case "register": {
+          const result = await this.api("/auth/register", "POST", input);
+          await this.go("login");
+          this.toast(result.message);
+          break;
+        }
+        case "forgot": {
+          const result = await this.api("/auth/forgot", "POST", input);
+          this.toast(result.message);
+          break;
+        }
+        case "reset": {
+          const result = await this.api("/auth/reset", "POST", {
+            ...input,
+            token: this.resetToken,
+          });
+          this.resetToken = null;
+          this.clearSession();
+          await this.go("login");
+          this.toast(result.message);
+          break;
+        }
+        case "filters":
+          this.filter = { ...input, overdue: Boolean(input.overdue) };
+          $("#main").innerHTML = this.dashboard();
+          break;
+        case "new-request": {
+          const r = await this.api("/requests", "POST", {
+            serviceId: this.selectedService,
+            description: input.description,
+            attachments: await this.attachments(form),
+          });
+          await this.go("confirmation", r.id);
+          break;
+        }
+        case "message":
+          await this.api(
+            `/requests/${this.request.id}/messages`,
+            "POST",
+            input,
+          );
+          await this.go("detail", this.request.id);
+          this.toast("Mensagem enviada.");
+          break;
+        case "assign":
+          await this.api(`/requests/${this.request.id}/assignment`, "POST", {
+            assigneeId: input.assigneeId,
+            version: this.request.version,
+          });
+          await this.go("detail", this.request.id);
+          this.toast("Responsável atualizado.");
+          break;
+        case "status":
+          await this.api(`/requests/${this.request.id}/status`, "POST", {
+            status: input.status,
+            notes: input.notes,
+            version: this.request.version,
+            attachments: await this.attachments(form),
+          });
+          await this.go("detail", this.request.id);
+          this.toast("Atendimento atualizado.");
+          break;
+        case "report":
+          this.period = input;
+          $("#main").innerHTML = this.reportView(await this.fetchReport());
+          break;
+        case "service":
+          await this.api("/admin/services", "POST", {
+            ...input,
+            id: form.dataset.id || undefined,
+            slaDays: Number(input.slaDays),
+            active: Boolean(input.active),
+            attachmentRequired: Boolean(input.attachmentRequired),
+          });
+          await this.go("admin");
+          this.toast("Serviço salvo.");
+          break;
+        case "holidays":
+          await this.api("/admin/holidays", "PUT", {
+            holidays: input.holidays.split(/\s+/).filter(Boolean),
+          });
+          await this.go("admin");
+          this.toast("Calendário salvo.");
+          break;
+        case "user":
+          await this.api(`/admin/users/${form.dataset.id}`, "PATCH", {
+            role: input.role,
+            active: Boolean(input.active),
+          });
+          await this.go("admin");
+          this.toast(
+            "Permissões atualizadas. As sessões anteriores foram encerradas.",
+          );
+          break;
+      }
+    } catch (failure) {
+      if (error) {
+        error.textContent = failure.message;
+        error.setAttribute("tabindex", "-1");
+        error.focus();
+      } else this.toast(failure.message);
+    } finally {
+      delete form.dataset.busy;
+      if (button) button.disabled = false;
     }
   }
 }
-
-// Inicializa imediatamente e também no DOMContentLoaded
-var app = new SDASAApp();
-window.app = app;
-document.addEventListener('DOMContentLoaded', () => {
-  if (!window.app || !window.app.currentUser) {
-    window.app = new SDASAApp();
-  }
-});
+new SDASAApp();
