@@ -1,170 +1,58 @@
-# Backlog oficial do SDASA
+﻿# Atividade 6 — Product Backlog do SDASA
 
-Histórias e critérios preservados da main (commit a352967). São referência de planejamento e aceite, não comprovação de implementação. Para o comportamento atual, consulte [API.md](API.md) e [VALIDACAO.md](VALIDACAO.md). A implementação atual autentica por e-mail; menções a CPF permanecem como requisito a avaliar.
+Este backlog transforma os requisitos do SDASA em **20 histórias de usuário**, com prioridade, estimativa e critérios de aceitação verificáveis. Complementa [REQUISITOS.md](../REQUISITOS.md) e orienta a [Sprint 1](SPRINT.md).
 
-## 4. 📋 Backlog Inicial Estruturado (Conforme Seção 6.6)
+As histórias HU01–HU10 preservam os temas originais (antes identificados como US01–US10 neste arquivo); HU11–HU20 detalham funcionalidades e necessidades de segurança e privacidade. Os critérios foram alinhados à API atual: login por e-mail, sem coleta de CPF. Cancelamento e atualização em tempo real não são compromissos desta versão.
 
-O backlog reúne as necessidades que deverão ser desenvolvidas e priorizadas pela equipe. Para o SDASA, o backlog inicial está organizado em histórias de usuário, permitindo transformar as necessidades identificadas nas etapas anteriores em funcionalidades implementáveis:
+## Priorização e estimativas
 
-### 4.1 Tabela Oficial do Backlog do Produto (Seção 6.6)
+- **Alta:** fluxo essencial, controle de acesso, recuperação ou proteção de dados.
+- **Média:** melhoria do atendimento e da operação após o fluxo principal.
+- **Baixa:** apoio gerencial que pode aguardar o atendimento básico.
+- **Story Points (SP):** esforço relativo com escala 1, 2, 3, 5, 8; inclui desenvolvimento ou ajustes, revisão e validação. Não representa horas. Estimativas propostas para refinamento pela equipe, sem velocidade histórica comprovada.
 
-| ID | História de usuário | Prioridade | Critério principal |
-|:---:|:---|:---:|:---|
-| **US01** | Como aluno, quero criar uma conta para acessar o sistema. | **Alta** | Cadastro realizado com dados válidos. |
-| **US02** | Como usuário, quero realizar login para acessar minhas solicitações. | **Alta** | Autenticação validada. |
-| **US03** | Como aluno, quero abrir uma solicitação acadêmica. | **Alta** | Solicitação registrada com protocolo. |
-| **US04** | Como aluno, quero acompanhar o status da solicitação. | **Alta** | Status exibido de forma clara. |
-| **US05** | Como aluno, quero consultar meu histórico. | **Média** | Solicitações anteriores disponíveis. |
-| **US06** | Como usuário, quero receber notificações sobre alterações. | **Média** | Atualizações comunicadas ao usuário. |
-| **US07** | Como secretaria, quero administrar as solicitações. | **Alta** | Demandas organizadas para atendimento. |
-| **US08** | Como secretaria, quero controlar prazos e pendências. | **Alta** | Prazos e pendências identificáveis. |
-| **US09** | Como instituição, quero manter comunicação com o usuário. | **Média** | Mensagens vinculadas à solicitação. |
-| **US10** | Como gestor, quero visualizar indicadores de atendimento. | **Baixa** | Relatórios básicos disponíveis. |
+A ordem de execução considera prioridade e dependências. Os itens selecionados e sua capacidade estão em [SPRINT.md](SPRINT.md). Ter código correspondente não significa aceite formal da história: consultar [API.md](API.md) e [VALIDACAO.md](VALIDACAO.md) para comportamento e evidências existentes. HU18 e HU19 são evoluções propostas; HU20 amplia a auditoria atual.
 
----
+## Histórias e critérios de aceitação
 
-### 4.2 Detalhamento Ágil das Histórias de Usuário (Critérios Gherkin & BDD)
+Cada critério abaixo deve ser demonstrado para aceitar a história.
 
-#### 🔹 US01: Cadastro de Conta de Usuário
-- **Como:** Aluno universitário
-- **Quero:** Criar uma conta informando meus dados acadêmicos (Nome, E-mail institucional, CPF, RA, Curso)
-- **Para que:** Eu possa acessar os serviços do sistema digital de atendimento.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Cadastro bem-sucedido com dados válidos
-    Dado que estou no formulário de criação de conta
-    Quando preencho todos os campos obrigatórios com formato correto
-    E confirmo o envio do cadastro
-    Então o sistema deve criar a conta e permitir meu login imediato.
-  ```
+| ID   | História de usuário                                                                                                                                 | Prioridade | Estimativa | Critérios de aceitação                                                                                                                                                                                                                                                                                                | Rastreabilidade                    |
+| :--- | :-------------------------------------------------------------------------------------------------------------------------------------------------- | :--------: | :--------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------- |
+| HU01 | Como aluno, quero criar uma conta, para acessar os serviços acadêmicos.                                                                             |    Alta    |    3 SP    | Nome, e-mail válido e senha de 12–128 caracteres permitem cadastro; e-mail duplicado é recusado; o cadastro público cria somente aluno; RA e curso são opcionais e CPF não é solicitado.                                                                                                                              | RF01                               |
+| HU02 | Como usuário, quero entrar e sair da minha conta, para acessar minhas ferramentas com segurança.                                                    |    Alta    |    3 SP    | Credenciais válidas criam sessão; inválidas são recusadas sem revelar qual campo falhou; usuário inativo não entra; após logout, a sessão anterior não acessa rotas protegidas.                                                                                                                                       | RF01, RF02, RNF02                  |
+| HU03 | Como aluno, quero abrir uma solicitação acadêmica, para receber atendimento com protocolo e prazo.                                                  |    Alta    |    5 SP    | Serviço ativo, descrição e documentos obrigatórios válidos geram protocolo único, autor autenticado, data e prazo; dados inválidos não criam pedido parcial; protocolo e prazo aparecem na confirmação.                                                                                                               | RF03, RF11, RF12; RN01, RN02, RN04 |
+| HU04 | Como aluno, quero acompanhar o status das minhas solicitações, para saber em que etapa estão.                                                       |    Alta    |    3 SP    | Lista e detalhes mostram protocolo, status e prazo atualizados ao consultar; aluno não consulta pedido alheio mesmo alterando o identificador na URL/API; lista vazia apresenta orientação.                                                                                                                           | RF02, RF04, RF05; RN03             |
+| HU05 | Como aluno, quero consultar meu histórico de solicitações, para recuperar decisões e comprovantes anteriores.                                       |   Média    |    3 SP    | Pedidos concluídos e indeferidos permanecem consultáveis pelo titular; detalhes exibem datas, eventos e parecer; histórico de outro titular é recusado.                                                                                                                                                               | RF04, RF05; RN05                   |
+| HU06 | Como usuário, quero receber notificações de alterações, para acompanhar pendências e conclusões.                                                    |   Média    |    3 SP    | Atualização relevante cria notificação para destinatários autorizados; consulta periódica da interface a apresenta; marcar como lida só altera notificações do próprio usuário.                                                                                                                                       | RF06; RN08                         |
+| HU07 | Como funcionário da secretaria, quero triar e atualizar solicitações, para organizar e concluir o atendimento.                                      |    Alta    |    5 SP    | Secretaria localiza pedidos e registra parecer; transições válidas gravam status e histórico; transições indevidas são recusadas; atualização com versão desatualizada retorna conflito sem sobrescrever outra alteração.                                                                                             | RF05, RF10; RN05, RN06             |
+| HU08 | Como funcionário da secretaria, quero visualizar prazos e pendências, para priorizar o atendimento.                                                 |    Alta    |    5 SP    | Prazo considera dias úteis, feriados cadastrados e vencimento às 18h de São Paulo; pedidos em atraso e com complementação são identificáveis; complementação não suspende o prazo; alteração do calendário vale para novos pedidos.                                                                                   | RF07; RN07                         |
+| HU09 | Como participante autorizado de uma solicitação, quero trocar mensagens vinculadas ao protocolo, para manter os esclarecimentos no mesmo histórico. |   Média    |    3 SP    | Mensagem não vazia registra autor, data e pedido; somente participantes autorizados consultam e enviam; pedido encerrado preserva leitura e recusa novas mensagens.                                                                                                                                                   | RF08; RN09                         |
+| HU10 | Como gestor, quero consultar indicadores por período, para avaliar volume e cumprimento dos prazos.                                                 |   Baixa    |    5 SP    | Filtro usa período de abertura; totais, atrasos e tempo médio correspondem aos pedidos registrados; ausência de amostra não produz média enganosa; gestor recebe agregados e não acessa pedidos individuais.                                                                                                          | RF09; RN10                         |
+| HU11 | Como administrador, quero configurar serviços e feriados, para manter as orientações e os prazos de atendimento atualizados.                        |   Média    |    3 SP    | Apenas administrador altera catálogo e calendário; serviço inativo não aceita novos pedidos; prazo e documentos obrigatórios aparecem na consulta de serviços; alterações administrativas geram auditoria.                                                                                                            | RF02, RF07, RF12                   |
+| HU12 | Como aluno, quero enviar e consultar anexos privados, para comprovar minha solicitação com segurança.                                               |    Alta    |    5 SP    | PDF, PNG e JPG válidos são aceitos até 5 MB por arquivo, 5 por operação e 20 por pedido; tipo incompatível e excesso são recusados; download exige acesso ao pedido; arquivo baixado preserva o conteúdo enviado.                                                                                                     | RF02, RF03, RNF02                  |
+| HU13 | Como usuário, quero redefinir minha senha, para recuperar o acesso à conta.                                                                         |    Alta    |    3 SP    | Solicitação retorna resposta genérica para e-mail existente ou não; link expira em 30 minutos e só funciona uma vez; nova senha válida revoga sessões anteriores; falha de entrega invalida o token.                                                                                                                  | RF01, RNF02                        |
+| HU14 | Como administrador, quero gerenciar perfis e inativar contas, para limitar o acesso às responsabilidades de cada pessoa.                            |    Alta    |    5 SP    | Somente administrador altera perfil/atividade; mudança revoga sessões e registra auditoria; não é permitido alterar o próprio acesso por esse fluxo; aluno não eleva seu perfil enviando campos à API.                                                                                                                | RF02, RNF02; RN03                  |
+| HU15 | Como professor, quero consultar solicitações atribuídas e registrar parecer, para colaborar no atendimento acadêmico.                               |   Média    |    3 SP    | Secretaria/admin atribui responsável ativo; professor consulta e envia mensagem apenas em pedido atribuído e aberto; não altera status administrativo nem acessa outro pedido.                                                                                                                                        | RF02, RF08, RF10                   |
+| HU16 | Como aluno, quero complementar uma solicitação devolvida, para fornecer o que falta à análise.                                                      |    Alta    |    3 SP    | Apenas titular de pedido aguardando complementação envia resposta e anexos válidos; pedido retorna à análise com evento registrado; pedido encerrado e usuário sem permissão são recusados.                                                                                                                           | RF03, RF05, RF08; RN06             |
+| HU17 | Como operador responsável, quero fazer backup e restaurar o banco, para recuperar solicitações e anexos após falha.                                 |    Alta    |    5 SP    | Snapshot inclui dados e anexos; restauração verifica integridade e exige diretório inexistente; ensaio isolado recupera protocolo e bytes dos anexos; execução e local privado da cópia são registrados.                                                                                                              | RNF02, RNF03                       |
+| HU18 | Como titular, quero solicitar acesso, correção ou eliminação dos meus dados, para exercer meus direitos de proteção de dados.                       |    Alta    |    8 SP    | Canal institucional e aviso de privacidade são publicados; pedido recebe protocolo após verificação proporcional da identidade; resposta entrega apenas dados do titular; eliminação observa justificativas de conservação e registra decisão e resposta. Evolução proposta, ainda sem fluxo específico implementado. | RNF02; análise LGPD                |
+| HU19 | Como responsável pela proteção de dados, quero aplicar uma política de retenção, para remover dados que deixaram de ser necessários.                |    Alta    |    8 SP    | Política aprovada define finalidade, prazo e exceções por categoria; rotina identifica elegíveis, respeita bloqueios de conservação e registra descarte sem copiar conteúdo pessoal; ensaio cobre banco, anexos, outbox e expiração das cópias. Evolução proposta.                                                    | RNF02; análise LGPD                |
+| HU20 | Como responsável pela segurança, quero consultar registros de eventos de segurança, para investigar acessos indevidos.                              |    Alta    |    5 SP    | Eventos de autenticação, negativas de acesso e ações administrativas têm data, ação, resultado e identificador de correlação; senha e tokens não são gravados; consulta é restrita; ensaio permite reconstruir a sequência do incidente. Ampliação da auditoria existente.                                            | RNF02, RNF03                       |
 
-#### 🔹 US02: Autenticação de Usuário (Login)
-- **Como:** Usuário cadastrado (Aluno, Professor, Secretaria, Gestor)
-- **Quero:** Realizar login informando e-mail/CPF e senha
-- **Para que:** Eu acesse minhas solicitações e ferramentas autorizadas com segurança.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Autenticação com credenciais válidas
-    Dado que informo credenciais corretas cadastradas
-    Quando clico em "Entrar"
-    Então sou direcionado ao ambiente correspondente ao meu perfil de acesso.
-  ```
+## Definition of Ready — entrada na Sprint
 
-#### 🔹 US03: Abertura de Solicitação Acadêmica
-- **Como:** Aluno
-- **Quero:** Registrar uma nova demanda acadêmica escolhendo o tipo de serviço, informando descrição e anexando arquivos
-- **Para que:** A secretaria receba meu pedido e inicie a tramitação com protocolo oficial.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Abertura de solicitação com geração de protocolo
-    Dado que preenchi o formulário de solicitação com tipo e descrição válidos
-    Quando submeto o requerimento
-    Então o sistema deve gerar um número de protocolo único no formato "SDASA-2026-XXXX"
-    E registrar o prazo estimado (SLA) de atendimento.
-  ```
+1. História possui benefício, prioridade, estimativa e critérios verificáveis.
+2. Product Owner revisa a prioridade e os critérios; aprovações ainda devem ser registradas pela equipe.
+3. Dependências técnicas e dados sintéticos necessários estão identificados.
+4. Equipe revisa viabilidade, segurança e privacidade antes de assumir o compromisso.
 
-#### 🔹 US04: Acompanhamento de Status
-- **Como:** Aluno
-- **Quero:** Acompanhar a situação corrente da minha solicitação em tempo real
-- **Para que:** Eu saiba a fase exata de tramitação sem necessidade de comparecimento presencial.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Exibição clara de status
-    Dado que possuo solicitações ativas
-    Quando acesso o painel principal
-    Então vejo o status atualizado de cada demanda com badges visuais distintas.
-  ```
+## Definition of Done — conclusão
 
-#### 🔹 US05: Consulta de Histórico
-- **Como:** Aluno
-- **Quero:** Consultar todas as solicitações anteriores já finalizadas ou canceladas
-- **Para que:** Eu mantenha controle comprobatório dos documentos e pedidos que já protocolei.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Acesso ao histórico completo
-    Dado que solicito a exibição de solicitações anteriores
-    Quando filtro por demandas concluídas
-    Então visualizo a data de emissão, histórico de tramitação e parecer oficial.
-  ```
+1. Todos os critérios da história foram demonstrados, incluindo negativas de acesso quando aplicáveis.
+2. Código ou ajustes foram revisados por outro integrante e os testes pertinentes passaram.
+3. Lint, testes e CI aplicáveis estão aprovados, com referência à execução ou PR.
+4. Documentação foi atualizada e nenhuma evidência contém dados pessoais reais ou segredos.
+5. Demonstração e aceite da Product Owner foram registrados; pendências relevantes impedem mover para Concluído.
 
-#### 🔹 US06: Notificações de Alteração
-- **Como:** Usuário
-- **Quero:** Receber avisos no sistema sempre que houver atualização em uma solicitação
-- **Para que:** Eu seja informado proativamente de deferimentos, pendências ou conclusões.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Notificação de atualização
-    Dado que a secretaria despachou uma solicitação minha
-    Quando o status muda para "Em Tramitação" ou "Concluído"
-    Então recebo um alerta no sino de notificações com os detalhes da mudança.
-  ```
-
-#### 🔹 US07: Gestão e Administração de Solicitações
-- **Como:** Secretaria acadêmica
-- **Quero:** Visualizar, filtrar, analisar e despachar as demandas protocoladas
-- **Para que:** O setor mantenha a organização e o fluxo ordenado de atendimento escolar.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Despacho administrativo
-    Dado que estou logado com o perfil Secretaria
-    Quando analiso uma demanda e emito o parecer com alteração de status
-    Então a solicitação é atualizada e a resposta fica registrada na timeline.
-  ```
-
-#### 🔹 US08: Controle de Prazos e Pendências
-- **Como:** Secretaria acadêmica
-- **Quero:** Identificar solicitações com prazos de SLA próximos do vencimento ou pendências de documentos
-- **Para que:** O atendimento ocorra dentro dos prazos regulamentares sem atrasos.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Identificação de prazos críticos
-    Dado que existem solicitações na fila da secretaria
-    Quando acesso o painel de controle
-    Então o sistema destaca visualmente os prazos limites e alertas de pendência.
-  ```
-
-#### 🔹 US09: Comunicação Vinculada à Solicitação
-- **Como:** Instituição (Secretaria / Docentes) e Usuário (Aluno)
-- **Quero:** Trocar mensagens e esclarecimentos diretamente vinculados ao protocolo da solicitação
-- **Para que:** Todo o diálogo permaneça registrado no histórico formal do processo acadêmico.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Envio de mensagem na solicitação
-    Dado que abro os detalhes de uma solicitação com dúvidas ou orientações
-    Quando envio uma mensagem no canal da solicitação
-    Então o texto é associado ao protocolo e visível para as partes autorizadas.
-  ```
-
-#### 🔹 US10: Indicadores e Relatórios Gerenciais
-- **Como:** Gestor acadêmico
-- **Quero:** Visualizar indicadores de atendimento, volume de demandas e taxa de cumprimento de prazos
-- **Para que:** A gestão acompanhe a eficiência dos processos e tome decisões estratégicas.
-- **Critérios de Aceitação (Gherkin):**
-  ```gherkin
-  Cenário: Visualização de relatórios básicos
-    Dado que estou autenticado como Gestor
-    Quando acesso o painel gerencial
-    Então visualizo as métricas consolidadas de SLA, solicitações por tipo e tempo médio.
-  ```
-
----
-
-### 4.3 Definições Formais de Governança Ágil (DoR e DoD)
-
-#### 📝 Definition of Ready (DoR) — Quando uma história pode entrar na Sprint:
-1. A User Story possui o formato padrão (*Como / Quero / Para que*).
-2. Os Critérios de Aceitação estão redigidos em formato Gherkin e foram aprovados pela PO (Prof.ª Erika Miranda).
-3. As dependências técnicas foram validadas pelo Arquiteto de Software (Maria Luiza Dias Silva Tavares).
-4. O alinhamento de negócio e indicadores foi validado pela Analista de Negócios (Ana Beatriz Cruz da Silva).
-5. A estimativa em Story Points e facilitação foi organizada pelo Scrum Master (Donald Cintado Cabezas).
-6. O impacto em segurança da informação e privacidade (LGPD) foi avaliado pela Security Officer (Stephanny Crepalde Costa).
-
-#### ✅ Definition of Done (DoD) — Quando uma história pode ser considerada pronta:
-1. O código foi desenvolvido pelo time de Dev/DevOps (Allan Vinícius Cabeggi Alvarenga) e atende a 100% dos critérios.
-2. Não há erros no console do navegador nem falhas de sintaxe/lint estático.
-3. Testes unitários automatizados foram implementados e validados pelo Analista de QA (Júlio César Benício Inácio) com 100% de sucesso (`npm test`).
-4. O código foi revisado por pelo menos um colega via Pull Request (Peer Review).
-5. O pipeline de CI/CD foi executado no GitHub Actions com status **Success (Verde)**.
-6. A funcionalidade foi validada no ambiente de homologação (`develop`) ou demonstrada à PO.
-
----
+Os papéis da equipe seguem o [README](../README.md). Esta entrega documenta o planejamento; não registra aprovações ou execução de Sprint que não ocorreram.
