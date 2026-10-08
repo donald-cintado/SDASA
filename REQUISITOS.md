@@ -45,6 +45,7 @@
   - [3.6 Rastreabilidade Simplificada](#36-rastreabilidade-simplificada)
   - [3.7 Considerações Finais da Especificação](#37-considerações-finais-da-especificação)
 - [4. CONSOLIDAÇÃO DO PROJETO](#4-consolidação-do-projeto)
+- [5. ENTREGAS COMPLEMENTARES — ATIVIDADES 6 E 7](#5-entregas-complementares--atividades-6-e-7)
 
 ---
 
@@ -203,6 +204,8 @@ flowchart LR
 ```
 
 ### 2.4 Histórias de Usuário
+
+As dez histórias abaixo compõem a base desta especificação. A **Atividade 6** amplia esse conjunto para **20 histórias (HU01–HU20)** no [Product Backlog](docs/BACKLOG.md), com o formato Como / quero / para, prioridades, estimativas em Story Points e critérios verificáveis. HU01–HU10 mantêm os temas originais, com critérios refinados; HU11–HU20 detalham serviços, anexos, recuperação, permissões, participação do professor, complementação, backup, direitos, retenção e auditoria. O backlog é a referência do planejamento atual, incluindo as evoluções propostas ainda não implementadas.
 
 | ID | História de usuário | Prioridade | Critério principal |
 | :--- | :--- | :---: | :--- |
@@ -484,3 +487,20 @@ O **SDASA** mantém uma linha de evolução coerente desde a identificação do 
 2. O **Design Thinking** transforma essas necessidades em uma proposta centrada no usuário.
 3. O **DevOps** define como a solução será desenvolvida e entregue continuamente.
 4. A **Engenharia de Software (Parte II)** organiza os requisitos necessários para orientar a implementação.
+
+## 5. ENTREGAS COMPLEMENTARES — ATIVIDADES 6 E 7
+
+Os documentos das atividades estão na pasta [docs/](docs/README.md), junto à documentação do projeto.
+
+### Atividade 6 — Scrum na prática
+
+- [Product Backlog](docs/BACKLOG.md): 20 histórias, cada uma com prioridade, estimativa e critérios de aceitação; rastreabilidade com requisitos e definições de entrada e conclusão.
+- [Sprint e quadro](docs/SPRINT.md): cinco histórias selecionadas, capacidade proposta de 21 pontos em duas semanas e quadro **Backlog → A Fazer → Em Desenvolvimento → Teste → Concluído**.
+
+### Atividade 7 — Segurança da Informação e LGPD
+
+- [Matriz de riscos](docs/MATRIZ_DE_RISCOS.md): ativo, ameaça, vulnerabilidade, risco, impacto, probabilidade e medidas preventivas/corretivas; classificação e tratamento de vazamento de dados, senha comprometida, indisponibilidade, acesso indevido e perda de dados.
+- [Plano de segurança](docs/PLANO_DE_SEGURANCA.md): responsabilidades, controles atuais e propostos, investigação, contenção, comunicação, recuperação e revisão do incidente do exercício.
+- [Análise de proteção de dados](docs/ANALISE_LGPD.md): respostas às seis perguntas sobre dados armazenados, necessidade, acesso, retenção, proteção e exercício de direitos, com fontes oficiais.
+
+Esses documentos detalham principalmente RF02 (controle de acesso), RN03 (permissões), RNF02 (segurança) e RNF03 (disponibilidade). Prazos de retenção e controles futuros estão identificados como propostas; sua documentação não comprova implementação ou aprovação institucional. O acesso indevido é o cenário hipotético fornecido pelo exercício.

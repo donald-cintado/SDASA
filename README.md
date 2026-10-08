@@ -107,8 +107,13 @@ Backups contêm dados pessoais e documentos: armazene-os em local privado. A aut
 
 ## Arquitetura e documentação
 
-- [REQUISITOS.md](REQUISITOS.md): requisitos do Módulo 2 preservados da main.
-- [docs/BACKLOG.md](docs/BACKLOG.md): dez histórias oficiais e critérios de aceite.
+- [REQUISITOS.md](REQUISITOS.md): requisitos do Módulo 2 e referências às entregas das Atividades 6 e 7.
+- [docs/README.md](docs/README.md): índice da documentação e correspondência com os exercícios.
+- [docs/BACKLOG.md](docs/BACKLOG.md): 20 histórias de usuário com prioridade, estimativa e critérios de aceitação (Atividade 6).
+- [docs/SPRINT.md](docs/SPRINT.md): Sprint proposta e quadro de acompanhamento (Atividade 6).
+- [docs/MATRIZ_DE_RISCOS.md](docs/MATRIZ_DE_RISCOS.md): identificação e tratamento dos cinco riscos (Atividade 7).
+- [docs/PLANO_DE_SEGURANCA.md](docs/PLANO_DE_SEGURANCA.md): controles preventivos e resposta ao incidente (Atividade 7).
+- [docs/ANALISE_LGPD.md](docs/ANALISE_LGPD.md): dados pessoais, necessidade, acesso, retenção, proteção e direitos (Atividade 7).
 
 - [PLANEJAMENTO.md](PLANEJAMENTO.md): diagnóstico, prioridades e critérios acordados.
 - [docs/README_ORIGINAL.md](docs/README_ORIGINAL.md): conteúdo do README antigo, preservado como registro do protótipo do Módulo 1.
