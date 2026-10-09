@@ -107,9 +107,11 @@ Backups contêm dados pessoais e documentos: armazene-os em local privado. A aut
 
 ## Arquitetura e documentação
 
+- [docs/ATIVIDADE_6_SCRUM.md](docs/ATIVIDADE_6_SCRUM.md): **Atividade 6 — Scrum na Prática (Módulo 3)**: Product Backlog com 15 histórias (HU01 a HU15), estimativas em Story Points, Sprint 1 (18 pts), Definition of Done, Quadro Scrum e fluxo de movimentação.
+- [docs/ATIVIDADE_7_SEGURANCA_LGPD.md](docs/ATIVIDADE_7_SEGURANCA_LGPD.md): **Atividade 7 — Segurança da Informação e LGPD (Módulo 3)**: Matriz de riscos (P×I), plano de segurança (preventivo/corretivo), análise LGPD (minimização, RBAC, retenção, direitos do titular) e diretrizes de resposta a incidentes (Resolução CD/ANPD nº 15/2024).
+- [docs/ATIVIDADE_8_CENTRAL_DE_SERVICOS_ITIL.md](docs/ATIVIDADE_8_CENTRAL_DE_SERVICOS_ITIL.md): **Atividade 8 — ITIL: Central de Serviços (Módulo 3)**: Catálogo de 7 serviços de TI (CS01 a CS07), regras de classificação de chamados, análise dos 5 chamados fictícios (CH-001 a CH-005), tabela de SLAs, fluxo de atendimento em 8 etapas e roteiro de simulação prática (15 min / 6 integrantes).
 - [REQUISITOS.md](REQUISITOS.md): requisitos do Módulo 2 preservados da main.
-- [docs/BACKLOG.md](docs/BACKLOG.md): dez histórias oficiais e critérios de aceite.
-
+- [docs/BACKLOG.md](docs/BACKLOG.md): dez histórias oficiais e critérios de aceite (Módulo 2).
 - [PLANEJAMENTO.md](PLANEJAMENTO.md): diagnóstico, prioridades e critérios acordados.
 - [docs/README_ORIGINAL.md](docs/README_ORIGINAL.md): conteúdo do README antigo, preservado como registro do protótipo do Módulo 1.
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md): diagrama, MVC + DAO, monólito × microsserviços e rastreabilidade.
@@ -133,16 +135,16 @@ O workflow valida e empacota a aplicação completa. **GitHub Pages não executa
 
 A versão usa uma instância, SQLite, anexos em BLOB, métricas e limitação de requisições locais ao processo. Notificações são consultadas a cada 30 segundos. Listas ainda não têm paginação e o dimensionamento de carga não foi medido. Verificação de tipo de arquivo não é análise antivírus. Monitor externo, alertas, avaliação com usuários e política institucional de retenção de dados permanecem para configuração/validação da equipe.
 
-## 👥 Equipe do Projeto Integrador (Módulo 1 & Módulo 2)
+## 👥 Equipe do Projeto Integrador (Módulo 3 — Atividade 6: Scrum na Prática)
 
-Conforme distribuição oficial de papéis da disciplina:
+Conforme distribuição oficial de papéis Scrum da disciplina:
 
-| Integrante | Papel no Projeto | Atribuição Principal |
+| Integrante | Papel no Scrum (Módulo 3) | Atribuição Principal |
 |:---|:---|:---|
-| **Prof.ª Erika Miranda** | *Product Owner* | Priorização das necessidades e do backlog (`eefmiranda@gmail.com`). |
-| **Donald Cintado Cabezas** | *Scrum Master* | Organização do trabalho e facilitação da comunicação. |
-| **Ana Beatriz Cruz da Silva** | *Analista de Negócios* | Alinhamento da solução aos objetivos e indicadores. |
-| **Maria Luiza Dias Silva Tavares** | *Arquiteto de Software* | Decisões arquiteturais e técnicas. |
-| **Allan Vinícius Cabeggi Alvarenga** | *Dev/DevOps* | Desenvolvimento, versionamento, automação, Git e testes. |
-| **Stephanny Crepalde Costa** | *Security Officer* | Segurança, riscos e proteção das informações. |
-| **Júlio César Benício Inácio** | *Analista de Qualidade e Sustentabilidade* | Qualidade, testes e práticas de sustentabilidade. |
+| **Prof.ª Erika Miranda** | *Product Owner* | Priorização das necessidades e do Product Backlog (`eefmiranda@gmail.com`). |
+| **Donald Cintado Cabezas** | *Scrum Master* | Facilitar o processo Scrum, acompanhar impedimentos e organizar a Sprint. |
+| **Ana Beatriz Cruz da Silva** | *Analista de Negócios* | Detalhar necessidades e apoiar a definição das histórias e critérios. |
+| **Stephanny Crepalde Costa** | *Arquiteto de Software* | Garantir que as soluções implementadas estejam alinhadas à arquitetura. |
+| **Júlio César Benício Inácio** | *Dev / DevOps* | Implementar, testar, versionar e integrar as histórias selecionadas. |
+| **Maria Luiza Dias Silva Tavares** | *Security Officer* | Verificar requisitos e riscos de segurança. |
+| **Allan Vinícius Cabeggi Alvarenga** | *Qualidade e Sustentabilidade* | Apoiar testes, qualidade e práticas sustentáveis. |
